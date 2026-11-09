@@ -28,8 +28,8 @@
     },
     "signups": {
       "kpi": 1000,
-      "mtd": 105,
-      "rr": 350
+      "mtd": 100,
+      "rr": 333
     },
     "cpr": {
       "kpi": 200,
@@ -85,7 +85,7 @@
       "label": "Nov 9",
       "period": "07-09",
       "leads": 2,
-      "signups": 41,
+      "signups": 36,
       "cpr": 0.0,
       "users": 2,
       "rev": 250,
@@ -174,8 +174,8 @@
       "name": "WIZ",
       "cplMtd": 0,
       "cplRr": 0,
-      "sigMtd": 84,
-      "sigRr": 280,
+      "sigMtd": 79,
+      "sigRr": 263,
       "cprMtd": 0,
       "cprRr": 0,
       "cpaMtd": 3,
@@ -344,7 +344,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "AFF 66",
@@ -353,7 +354,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "ALL IN AFFILIATES",
@@ -362,7 +364,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "ALL IN AFFILIATES",
@@ -371,7 +374,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "ALL IN AFFILIATES",
@@ -380,7 +384,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "WDG (2 SignUps)"
     },
     {
       "advertiser": "ALL IN AFFILIATES",
@@ -389,7 +394,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "WDG (1 SignUps)"
     },
     {
       "advertiser": "ALL IN AFFILIATES",
@@ -398,7 +404,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "B2S",
@@ -407,7 +414,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "B2S",
@@ -416,7 +424,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "B2S",
@@ -425,7 +434,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "B2S",
@@ -434,7 +444,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "BASHER AGENCY",
@@ -443,7 +454,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "WDG (1 SignUps)"
     },
     {
       "advertiser": "BASHER AGENCY",
@@ -452,7 +464,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "WDG (1 SignUps)"
     },
     {
       "advertiser": "BASHER AGENCY",
@@ -461,7 +474,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "WIZ (19 SignUps)"
     },
     {
       "advertiser": "BASHER AGENCY",
@@ -470,7 +484,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "CHANCED",
@@ -479,7 +494,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "CHA (1 SignUps) | WIZ (6 SignUps)"
     },
     {
       "advertiser": "CHANCED",
@@ -488,7 +504,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "FZY (1 SignUps) | WIZ (4 SignUps)"
     },
     {
       "advertiser": "COINSROYALE",
@@ -497,7 +514,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "COINSROYALE",
@@ -506,7 +524,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 150.0,
-      "profit": -150.0
+      "profit": -150.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "CardCrush",
@@ -515,7 +534,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "ADM (1 SignUps) | WIZ (6 SignUps)"
     },
     {
       "advertiser": "Eskhol Real_LoneS",
@@ -524,7 +544,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "WIZ (1 SignUps)"
     },
     {
       "advertiser": "Eskhol Real_LoneS",
@@ -533,16 +554,18 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "WIZ (2 SignUps)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
       "brand": "LavishLuck",
-      "signups": 21,
+      "signups": 16,
       "ftd": 1,
       "revenue": 180.0,
       "budget": 0.0,
-      "profit": 180.0
+      "profit": 180.0,
+      "media_partners": "REP (1 SignUps) | WIZ (15 SignUps, 1 Ftd, $180.00)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -551,7 +574,8 @@
       "ftd": 1,
       "revenue": 170.0,
       "budget": 0.0,
-      "profit": 170.0
+      "profit": 170.0,
+      "media_partners": "AWP (1 SignUps) | FST (2 SignUps) | VENE (3 SignUps, 1 Ftd, $170.00)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -560,7 +584,8 @@
       "ftd": 1,
       "revenue": 130.0,
       "budget": 0.0,
-      "profit": 130.0
+      "profit": 130.0,
+      "media_partners": "WIZ (8 SignUps, 1 Ftd, $130.00)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -569,7 +594,8 @@
       "ftd": 1,
       "revenue": 120.0,
       "budget": 0.0,
-      "profit": 120.0
+      "profit": 120.0,
+      "media_partners": "WIZ (6 SignUps, 1 Ftd, $120.00)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -578,7 +604,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -587,7 +614,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -596,7 +624,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "EMO (1 SignUps)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -605,7 +634,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -614,7 +644,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -623,7 +654,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "FZY (1 SignUps) | SIGB (1 SignUps)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -632,7 +664,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -641,7 +674,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -650,7 +684,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "FZY (1 SignUps)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -659,7 +694,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "CHA (1 SignUps)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -668,7 +704,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -677,7 +714,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -686,7 +724,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "ADM (1 SignUps)"
     },
     {
       "advertiser": "GAMETIME DIGITAL",
@@ -695,7 +734,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 120.0,
-      "profit": -120.0
+      "profit": -120.0,
+      "media_partners": "WIZ (12 SignUps)"
     },
     {
       "advertiser": "IMPACT",
@@ -704,7 +744,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "IMPACT",
@@ -713,7 +754,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "IMPACT",
@@ -722,7 +764,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "LuckyBunny direct",
@@ -731,7 +774,8 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     },
     {
       "advertiser": "SPLASH",
@@ -740,11 +784,12 @@
       "ftd": 0,
       "revenue": 0.0,
       "budget": 0.0,
-      "profit": 0.0
+      "profit": 0.0,
+      "media_partners": "-"
     }
   ],
   "advertisers_brands_totals": {
-    "signups": 105,
+    "signups": 100,
     "ftd": 4,
     "revenue": 600.0,
     "budget": 270.0,
