@@ -163,7 +163,7 @@
         </div>
       </div>
 
-      <!-- 3. PUBLISHERS BREAKDOWN REPORT (UBICADA ABAJO DE BRANDS SUMMARY REPORT) -->
+      <!-- 3. PUBLISHERS BREAKDOWN REPORT CON LOS CAMPOS: SIGN UPS - FTD - REVENUE - BUDGET - PROFIT - S2P -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex flex-wrap items-center gap-3 pb-1">
           <span class="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
@@ -192,24 +192,33 @@
                   <button onclick="sortPublisherTable('ftd')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
                 </th>
                 <th class="text-center">
-                  <button onclick="sortPublisherTable('s2p')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
-                </th>
-                <th class="text-center">
                   <button onclick="sortPublisherTable('revenue')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
                 </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('budget')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('profit')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('s2p')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
               </tr>
+              <!-- ENCABEZADO CON TODOS LOS CAMPOS REQUERIDOS -->
               <tr class="bg-[#0c1938] text-white font-black text-xs uppercase tracking-wider select-none text-center">
-                <th class="p-3 text-left w-48 pl-4">PUBLISHER</th>
+                <th class="p-3 text-left w-40 pl-4">PUBLISHER</th>
                 <th class="p-3 text-left">ADVERTISERS</th>
                 <th class="p-3 text-left">BRANDS</th>
                 <th class="p-3 text-center">SIGN UPS</th>
-                <th class="p-3 text-center">FTDS</th>
-                <th class="p-3 text-center">S2P</th>
-                <th class="p-3 text-center pr-4">REVENUE / PAYOUT</th>
+                <th class="p-3 text-center">FTD</th>
+                <th class="p-3 text-center">REVENUE</th>
+                <th class="p-3 text-center">BUDGET</th>
+                <th class="p-3 text-center">PROFIT</th>
+                <th class="p-3 text-center pr-4">S2P</th>
               </tr>
             </thead>
             <tbody id="publisherBreakdownBody" class="font-semibold text-slate-800 divide-y divide-slate-200">
-              <tr><td colspan="7" class="p-3 text-center text-slate-400">Loading data...</td></tr>
+              <tr><td colspan="9" class="p-3 text-center text-slate-400">Loading data...</td></tr>
             </tbody>
             <tfoot id="publisherBreakdownFoot" class="font-black bg-slate-50 border-t-2"></tfoot>
           </table>
@@ -815,8 +824,8 @@
       renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
     }
 
-    // RENDER NUEVA TABLA: PUBLISHERS BREAKDOWN
-    function renderPublisherBreakdown(brandsList, ratios = { sRatio: 1, uRatio: 1, rRatio: 1 }) {
+    // RENDER NUEVA TABLA: PUBLISHERS BREAKDOWN CON CAMPOS EXPANDIDOS
+    function renderPublisherBreakdown(brandsList, ratios = { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 }) {
       const tbody = document.getElementById('publisherBreakdownBody');
       const tfoot = document.getElementById('publisherBreakdownFoot');
       if (!tbody) return;
@@ -826,27 +835,45 @@
         const mpRaw = b.media_partners;
         if (!mpRaw || mpRaw === '-' || typeof mpRaw !== 'string') return;
         const segments = mpRaw.split('|').map(s => s.trim()).filter(Boolean);
+        if (segments.length === 0) return;
 
-        segments.forEach(seg => {
-          const parsed = parseMediaPartnerSegment(seg);
-          if (parsed) {
-            const s = Math.round(parsed.signups * (ratios.sRatio ?? 1));
-            const f = Math.round(parsed.ftd * (ratios.uRatio ?? 1));
-            const r = Number((parsed.revenue * (ratios.rRatio ?? 1)).toFixed(2));
-            const rawS2p = s > 0 ? (f / s) : 0;
-            const s2p = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
+        const parsedSegments = segments.map(seg => parseMediaPartnerSegment(seg)).filter(Boolean);
+        if (parsedSegments.length === 0) return;
 
-            flatList.push({
-              publisher: parsed.publisher,
-              advertiser: b.advertiser || '—',
-              brand: b.brand || '—',
-              signups: s,
-              ftd: f,
-              revenue: r,
-              s2pVal: rawS2p,
-              s2pText: s2p
-            });
+        const totalBrandSignups = b.signups || 0;
+        const totalBrandBudget = b.budget || 0;
+
+        parsedSegments.forEach(parsed => {
+          const s = Math.round(parsed.signups * (ratios.sRatio ?? 1));
+          const f = Math.round(parsed.ftd * (ratios.uRatio ?? 1));
+          const r = Number((parsed.revenue * (ratios.rRatio ?? 1)).toFixed(2));
+          
+          let rawBudget = 0;
+          if (totalBrandBudget > 0) {
+            if (totalBrandSignups > 0) {
+              rawBudget = (parsed.signups / totalBrandSignups) * totalBrandBudget;
+            } else {
+              rawBudget = totalBrandBudget / parsedSegments.length;
+            }
           }
+          const budgetVal = Number((rawBudget * (ratios.bRatio ?? 1)).toFixed(2));
+          const profitVal = Number((r - budgetVal).toFixed(2));
+          
+          const rawS2p = s > 0 ? (f / s) : 0;
+          const s2p = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
+
+          flatList.push({
+            publisher: parsed.publisher,
+            advertiser: b.advertiser || '—',
+            brand: b.brand || '—',
+            signups: s,
+            ftd: f,
+            revenue: r,
+            budget: budgetVal,
+            profit: profitVal,
+            s2pVal: rawS2p,
+            s2pText: s2p
+          });
         });
       });
 
@@ -857,39 +884,52 @@
       });
 
       if (flatList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 font-bold">No publisher records available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-400 font-bold">No publisher records available</td></tr>';
         if (tfoot) tfoot.innerHTML = '';
         applyPublisherRowsLimit();
         return;
       }
 
-      let totSignups = 0, totFtd = 0, totRev = 0;
+      let totSignups = 0, totFtd = 0, totRev = 0, totBudget = 0;
 
       const rowsHtml = flatList.map(item => {
         totSignups += item.signups;
         totFtd += item.ftd;
         totRev += item.revenue;
+        totBudget += item.budget;
+
+        const revDisplay = `$${Math.round(item.revenue).toLocaleString()}`;
+        const bDisplay = `$${Math.round(item.budget).toLocaleString()}`;
+        const profitDisplay = (item.profit < 0 ? '-$' : '$') + Math.round(Math.abs(item.profit)).toLocaleString();
+        const profitColor = item.profit < 0 ? 'text-red-custom' : (item.profit > 0 ? 'text-green-custom' : 'text-slate-700');
 
         return `
         <tr class="hover:bg-slate-50 transition-colors publisher-row"
             data-publisher="${item.publisher}"
             data-signups="${item.signups}"
             data-ftd="${item.ftd}"
-            data-s2p="${item.s2pVal}"
-            data-revenue="${item.revenue}">
+            data-revenue="${item.revenue}"
+            data-budget="${item.budget}"
+            data-profit="${item.profit}"
+            data-s2p="${item.s2pVal}">
           <td class="p-2.5 font-black text-left text-slate-900 pl-4">${item.publisher}</td>
           <td class="p-2.5 font-bold text-left text-slate-800">${item.advertiser}</td>
           <td class="p-2.5 font-semibold text-left text-slate-700">${item.brand}</td>
           <td class="p-2.5 text-center font-black text-amber-600 text-sm">${item.signups.toLocaleString()}</td>
           <td class="p-2.5 text-center font-black text-blue-700 text-sm">${item.ftd.toLocaleString()}</td>
-          <td class="p-2.5 text-center font-black text-purple-700">${item.s2pText}</td>
-          <td class="p-2.5 text-center font-black text-emerald-600 pr-4">$${Math.round(item.revenue).toLocaleString()}</td>
+          <td class="p-2.5 text-center font-bold text-slate-800">${revDisplay}</td>
+          <td class="p-2.5 text-center font-bold text-slate-800">${bDisplay}</td>
+          <td class="p-2.5 text-center font-extrabold ${profitColor}">${profitDisplay}</td>
+          <td class="p-2.5 text-center font-black text-purple-700 pr-4">${item.s2pText}</td>
         </tr>`;
       }).join('');
 
       tbody.innerHTML = rowsHtml;
 
+      const totProfit = Number((totRev - totBudget).toFixed(2));
       const totS2p = totSignups > 0 ? ((totFtd / totSignups) * 100).toFixed(1) + '%' : '0.0%';
+      const totProfitDisplay = (totProfit < 0 ? '-$' : '$') + Math.round(Math.abs(totProfit)).toLocaleString();
+      const totProfitColor = totProfit < 0 ? 'text-red-custom' : (totProfit > 0 ? 'text-green-custom' : 'text-slate-900');
 
       if (tfoot) {
         tfoot.innerHTML = `
@@ -898,8 +938,10 @@
           <td colspan="2" class="p-3 text-left text-slate-500 font-extrabold">${flatList.length} Active Relationships</td>
           <td class="p-3 text-center font-black text-amber-700 text-sm">${totSignups.toLocaleString()}</td>
           <td class="p-3 text-center font-black text-blue-800 text-sm">${totFtd.toLocaleString()}</td>
-          <td class="p-3 text-center font-black text-purple-700">${totS2p}</td>
-          <td class="p-3 text-center font-black text-emerald-700 text-sm pr-4">$${Math.round(totRev).toLocaleString()}</td>
+          <td class="p-3 text-center font-black text-slate-900">$${Math.round(totRev).toLocaleString()}</td>
+          <td class="p-3 text-center font-black text-slate-900">$${Math.round(totBudget).toLocaleString()}</td>
+          <td class="p-3 text-center font-black ${totProfitColor}">${totProfitDisplay}</td>
+          <td class="p-3 text-center font-black text-purple-700 pr-4">${totS2p}</td>
         </tr>`;
       }
 
@@ -1175,7 +1217,7 @@
             <td class="text-center font-bold">${revDisplay}</td>
             <td class="text-center font-bold">${roi}</td>
             <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`;
+          </tr>`; 
         }
 
         if (type === 'CPL') {
@@ -1196,7 +1238,7 @@
             <td class="text-center font-bold">${revDisplay}</td>
             <td class="text-center font-bold">${roi}</td>
             <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`;
+          </tr>`; 
         }
       }).join('');
 
@@ -1296,274 +1338,7 @@
       updateCplSortIcons();
     }
 
-    // ORDENAMIENTO EN TABLA DE MARCAS
-    function sortBrandsTable(key) {
-      if (brandsSortKey === key) {
-        brandsSortDir = (brandsSortDir === 'desc') ? 'asc' : 'desc';
-      } else {
-        brandsSortKey = key;
-        brandsSortDir = 'desc';
-      }
-
-      const tbody = document.getElementById('brandsSummaryBody');
-      if (!tbody) return;
-      const rows = Array.from(tbody.querySelectorAll('tr.brand-row'));
-      if (rows.length === 0) return;
-
-      rows.sort((a, b) => {
-        const vA = parseFloat(a.dataset[key]) || 0;
-        const vB = parseFloat(b.dataset[key]) || 0;
-        return brandsSortDir === 'desc' ? vB - vA : vA - vB;
-      });
-
-      rows.forEach(r => tbody.appendChild(r));
-      updateBrandsSortIcons();
-    }
-
-    function updateBrandsSortIcons() {
-      const keys = ['signups', 'ftd', 'revenue', 'budget', 'profit', 's2p'];
-      keys.forEach(k => {
-        const btn = document.getElementById(`sort-brand-${k}`);
-        if (!btn) return;
-        if (brandsSortKey === k) {
-          const icon = brandsSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
-          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
-          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        } else {
-          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
-          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        }
-      });
-    }
-
-    function renderBrandsSummary(brands, ratios = { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 }) {
-      const tbody = document.getElementById('brandsSummaryBody');
-      const tfoot = document.getElementById('brandsSummaryFoot');
-      if (!tbody) return;
-
-      if (!brands || brands.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-3 text-center text-slate-400 font-bold">No brand records available</td></tr>';
-        if (tfoot) tfoot.innerHTML = '';
-        return;
-      }
-
-      let totSignups = 0, totFtd = 0, totRev = 0, totBudget = 0;
-
-      const rowsHtml = brands.map(item => {
-        const s = Math.round((item.signups || 0) * (ratios.sRatio ?? 1));
-        const f = Math.round((item.ftd || 0) * (ratios.uRatio ?? 1));
-        const b = Math.round((item.budget || 0) * (ratios.bRatio ?? 1));
-        const r = Number(((item.revenue || 0) * (ratios.rRatio ?? 1)).toFixed(2));
-        const p = Number((r - b).toFixed(2));
-
-        totSignups += s;
-        totFtd += f;
-        totRev += r;
-        totBudget += b;
-
-        const rawS2p = s > 0 ? (f / s) : 0;
-        const s2p = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
-
-        const revDisplay = `$${Math.round(r).toLocaleString()}`;
-        const bDisplay = `$${Math.round(b).toLocaleString()}`;
-        const profitDisplay = (p < 0 ? '-$' : '$') + Math.round(Math.abs(p)).toLocaleString();
-        const profitColor = p < 0 ? 'text-red-custom' : (p > 0 ? 'text-green-custom' : 'text-slate-700');
-
-        return `
-        <tr class="hover:bg-slate-50 transition-colors brand-row" 
-            data-signups="${s}" 
-            data-ftd="${f}" 
-            data-revenue="${r}" 
-            data-budget="${b}" 
-            data-profit="${p}" 
-            data-s2p="${rawS2p}">
-          <td class="p-2 font-bold text-left text-slate-900">${item.advertiser || '—'}</td>
-          <td class="p-2 font-semibold text-left text-slate-700">${item.brand || '—'}</td>
-          <td class="p-2 text-center font-bold text-slate-800">${s.toLocaleString()}</td>
-          <td class="p-2 text-center font-black text-slate-900">${f.toLocaleString()}</td>
-          <td class="p-2 text-center font-bold text-slate-800">${revDisplay}</td>
-          <td class="p-2 text-center font-bold text-slate-800">${bDisplay}</td>
-          <td class="p-2 text-center font-extrabold ${profitColor}">${profitDisplay}</td>
-          <td class="p-2 text-center font-black text-purple-700">${s2p}</td>
-        </tr>`;
-      }).join('');
-
-      tbody.innerHTML = rowsHtml;
-
-      if (brandsSortKey) {
-        const rows = Array.from(tbody.querySelectorAll('tr.brand-row'));
-        rows.sort((a, b) => {
-          const vA = parseFloat(a.dataset[brandsSortKey]) || 0;
-          const vB = parseFloat(b.dataset[brandsSortKey]) || 0;
-          return brandsSortDir === 'desc' ? vB - vA : vA - vB;
-        });
-        rows.forEach(r => tbody.appendChild(r));
-      }
-      updateBrandsSortIcons();
-
-      const totProfit = Number((totRev - totBudget).toFixed(2));
-      const totS2p = totSignups > 0 ? ((totFtd / totSignups) * 100).toFixed(1) + '%' : '0.0%';
-      const totProfitDisplay = (totProfit < 0 ? '-$' : '$') + Math.round(Math.abs(totProfit)).toLocaleString();
-      const totProfitColor = totProfit < 0 ? 'text-red-custom' : (totProfit > 0 ? 'text-green-custom' : 'text-slate-900');
-
-      if (tfoot) {
-        tfoot.innerHTML = `<tr>
-          <td class="p-2 font-black text-left text-slate-900">Grand total</td>
-          <td class="p-2 font-extrabold text-left text-slate-500">${brands.length} Brands</td>
-          <td class="p-2 text-center font-black text-blue-900">${totSignups.toLocaleString()}</td>
-          <td class="p-2 text-center font-black text-purple-900">${totFtd.toLocaleString()}</td>
-          <td class="p-2 text-center font-black text-emerald-900">$${Math.round(totRev).toLocaleString()}</td>
-          <td class="p-2 text-center font-black text-sky-900">$${Math.round(totBudget).toLocaleString()}</td>
-          <td class="p-2 text-center font-black ${totProfitColor}">${totProfitDisplay}</td>
-          <td class="p-2 text-center font-black text-purple-700">${totS2p}</td>
-        </tr>`;
-      }
-    }
-
-    function applyEqualKpis(partners, totKpis) {
-      const kLeads = totKpis.cpl?.kpi || 4000;
-      const kSigs = totKpis.signups?.kpi || 1000;
-      const kCpa = totKpis.cpa?.kpi || 300;
-      const kCpr = totKpis.cpr?.kpi || 200;
-
-      const cplPartners = partners.filter(isCplPartner);
-      const sigPartners = partners.filter(p => typeof p.sigMtd === 'number' && p.sigMtd > 0);
-      const cpaPartners = partners.filter(isCpaPartner);
-      const cprPartners = partners.filter(isCprPartner);
-
-      const cplList = distributeEqual(kLeads, cplPartners.length);
-      const sigList = distributeEqual(kSigs, sigPartners.length);
-      const cpaList = distributeEqual(kCpa, cpaPartners.length);
-      const cprList = distributeEqual(kCpr, cprPartners.length);
-
-      cplPartners.forEach((p, i) => p.cplKpi = cplList[i]);
-      sigPartners.forEach((p, i) => p.sigKpi = sigList[i]);
-      cpaPartners.forEach((p, i) => p.cpaKpi = cpaList[i]);
-      cprPartners.forEach((p, i) => p.cprKpi = cprList[i]);
-
-      partners.forEach(p => {
-        if (!p.cplKpi) p.cplKpi = '—';
-        if (!p.sigKpi) p.sigKpi = '—';
-        if (!p.cpaKpi) p.cpaKpi = '—';
-        if (!p.cprKpi) p.cprKpi = '—';
-      });
-    }
-
-    function renderKPIs(d) {
-      if (d.teamKpis) {
-        document.getElementById('tp-kpi-budget').textContent = '$' + Math.round(d.teamKpis.budget).toLocaleString();
-        document.getElementById('tp-kpi-signups').textContent = d.teamKpis.signups.toLocaleString();
-        document.getElementById('tp-kpi-users').textContent = d.teamKpis.users.toLocaleString();
-        document.getElementById('tp-kpi-revenue').textContent = '$' + Math.round(d.teamKpis.revenue).toLocaleString();
-        document.getElementById('tp-kpi-profit').textContent = '$' + Math.round(d.teamKpis.profit).toLocaleString();
-      }
-      document.getElementById('tp-mtd-budget').textContent = '$' + Math.round(d.budget).toLocaleString();
-      document.getElementById('tp-mtd-signups').textContent = d.sigs.toLocaleString();
-      document.getElementById('tp-mtd-users').textContent = d.users.toLocaleString();
-      document.getElementById('tp-mtd-revenue').textContent = '$' + Math.round(d.rev).toLocaleString();
-      document.getElementById('tp-mtd-profit').textContent = (d.profit < 0 ? '-$' : '$') + Math.round(Math.abs(d.profit)).toLocaleString();
-
-      const elB = document.getElementById('tp-rr-budget');
-      elB.textContent = '$' + Math.round(d.rr.budget).toLocaleString();
-      elB.className = `${getRrColor(d.rr.budget, d.teamKpis?.budget || 5500)} font-black`;
-
-      const elS = document.getElementById('tp-rr-signups');
-      elS.textContent = d.rr.sigs.toLocaleString();
-      elS.className = `${getRrColor(d.rr.sigs, d.teamKpis?.signups || 1000)} font-black`;
-
-      const elU = document.getElementById('tp-rr-users');
-      elU.textContent = d.rr.users.toLocaleString();
-      elU.className = `${getRrColor(d.rr.users, d.teamKpis?.users || 300)} font-black`;
-
-      const elR = document.getElementById('tp-rr-revenue');
-      elR.textContent = '$' + Math.round(d.rr.rev).toLocaleString();
-      elR.className = `${getRrColor(d.rr.rev, d.teamKpis?.revenue || 16500)} font-black`;
-
-      const elP = document.getElementById('tp-rr-profit');
-      elP.textContent = (d.rr.profit < 0 ? '-$' : '$') + Math.round(Math.abs(d.rr.profit)).toLocaleString();
-      elP.className = `${getRrColor(d.rr.profit, d.teamKpis?.profit || 11000)} font-black`;
-
-      document.getElementById('tp-rr-roi').textContent = (d.budget > 0 && d.rev > 0) ? `1:${(d.rev / d.budget).toFixed(1)}` : (d.roi || '—');
-    }
-
-    // TOP METRIC CARDS CON KPI Y RR
-    function renderTopCards(partners, teamKpis = { budget: 5500, signups: 1000, users: 300, revenue: 16500, profit: 11000 }, rr = {}) {
-      const cats = [
-        { k: 'budget', t: 'BUDGET', p: '$', ic: 'wallet', c: '#f59e0b', bg: 'bg-amber-50 text-amber-800', f: p => p.budget, kpi: teamKpis.budget, rrKey: 'budget' },
-        { k: 'sigs', t: 'SIGNUPS', p: '', ic: 'check', c: '#2563eb', bg: 'bg-blue-50 text-blue-800', f: p => typeof p.sigMtd === 'number' ? p.sigMtd : 0, kpi: teamKpis.signups, rrKey: 'sigs' },
-        { k: 'users', t: 'USERS', p: '', ic: 'user', c: '#a855f7', bg: 'bg-purple-50 text-purple-900', f: p => typeof p.cpaMtd === 'number' ? p.cpaMtd : 0, kpi: teamKpis.users, rrKey: 'users' },
-        { k: 'rev', t: 'REVENUE', p: '$', ic: 'dollar-sign', c: '#00d285', bg: 'bg-emerald-50 text-emerald-800', f: p => p.rev || 0, kpi: teamKpis.revenue, rrKey: 'rev' },
-        { k: 'profit', t: 'PROFIT', p: '$', ic: 'sack-dollar', c: '#14b8a6', bg: 'bg-teal-50 text-teal-800', f: p => p.profit || 0, kpi: teamKpis.profit, rrKey: 'profit' }
-      ];
-      const grid = document.getElementById('metrics-grid'); grid.innerHTML = '';
-      cats.forEach(cat => {
-        const items = partners.map(p => ({ name: p.name, val: cat.f(p) })).filter(i => cat.k === 'profit' ? i.val !== 0 : i.val > 0).sort((a,b) => b.val - a.val);
-        const max = Math.max(...items.map(i => Math.abs(i.val)), 1);
-        const total = items.reduce((a,i) => a + i.val, 0);
-
-        const catRrVal = (rr && typeof rr[cat.rrKey] === 'number') ? rr[cat.rrKey] : Math.round(total * currentRrFactor);
-        const rrColor = getRrColor(catRrVal, cat.kpi);
-        const rrDisplay = (cat.p === '$' ? (catRrVal < 0 ? '-$' : '$') : '') + Math.round(Math.abs(catRrVal)).toLocaleString();
-
-        const col = document.createElement('div'); col.className = 'flex flex-col gap-2.5 min-w-0';
-        col.innerHTML = `
-          <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between h-[115px]">
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="text-[10px] font-extrabold uppercase text-slate-500">${cat.t}</span>
-              </div>
-              <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style="background:${cat.c}20; color:${cat.c}"><i class="fa-solid fa-${cat.ic}"></i></div>
-            </div>
-            <div class="my-0.5 flex items-baseline gap-1"><span class="text-xl font-black text-slate-900">${cat.p === '$' ? (total < 0 ? '-$' : '$') : ''}${Math.round(Math.abs(total)).toLocaleString()}</span><span class="text-[9px] font-bold text-slate-400">TOTAL</span></div>
-            <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 border-t border-slate-100 pt-1">
-              <span>KPI: <span class="text-slate-600 font-extrabold">${cat.p}${Math.round(cat.kpi).toLocaleString()}</span></span>
-              <span>RR: <span class="${rrColor} font-black">${rrDisplay}</span></span>
-            </div>
-          </div>
-          <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200 flex flex-col h-[320px]">
-            <div class="${cat.bg} text-[10px] font-extrabold p-1.5 rounded-lg mb-3 text-center uppercase">${cat.t}</div>
-            <div class="overflow-y-auto flex-1 pr-1 space-y-3.5">
-              ${items.map(i => {
-                const isNeg = i.val < 0, pct = Math.max(Math.round((Math.abs(i.val) / max) * 100), 2);
-                return `<div>
-                  <div class="flex justify-between text-xs mb-1 font-bold">
-                    <span class="font-extrabold text-slate-800">${i.name}</span>
-                    <span class="font-black ${isNeg ? 'text-red-600' : 'text-slate-900'}">${cat.p === '$' ? (isNeg ? '-$' : '$') : ''}${Math.round(Math.abs(i.val)).toLocaleString()}</span>
-                  </div>
-                  <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden"><div class="h-2 rounded-full" style="width:${pct}%; background-color:${isNeg ? '#ef4444' : cat.c}"></div></div>
-                </div>`;
-              }).join('')}
-            </div>
-          </div>`;
-        grid.appendChild(col);
-      });
-    }
-
-    function renderLineChart(slice, prefix, kpis = { cpl: 4000, sigs: 1000, users: 300 }, totalDays = 30) {
-      const canvas = document.getElementById('mainLineChart'); if (!canvas) return;
-      Chart.getChart(canvas)?.destroy();
-      const labels = slice.map(r => r.label || `${prefix} ${parseInt(r.date.split('-')[2])}`);
-      const dailyLeadsKpi = (kpis.cpl / totalDays).toFixed(1);
-      const dailySigsKpi = (kpis.sigs / totalDays).toFixed(1);
-      const dailyUsersKpi = (kpis.users / totalDays).toFixed(1);
-
-      new Chart(canvas.getContext('2d'), {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            { label: 'LEADS', data: slice.map(r => r.leads || 0), borderColor: '#00d285', backgroundColor: '#00d285', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
-            { label: 'SIGNUPS', data: slice.map(r => r.signups || 0), borderColor: '#2563eb', backgroundColor: '#2563eb', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
-            { label: 'USERS', data: slice.map(r => r.users || 0), borderColor: '#a855f7', backgroundColor: '#a855f7', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
-            { label: `KPI LEADS (${dailyLeadsKpi}/d)`, data: Array(slice.length).fill(dailyLeadsKpi), borderColor: '#00d285', borderDash: [6, 4], pointRadius: 0, fill: false },
-            { label: `KPI SIGNUPS (${dailySigsKpi}/d)`, data: Array(slice.length).fill(dailySigsKpi), borderColor: '#2563eb', borderDash: [6, 4], pointRadius: 0, fill: false },
-            { label: `KPI USERS (${dailyUsersKpi}/d)`, data: Array(slice.length).fill(dailyUsersKpi), borderColor: '#a855f7', borderDash: [6, 4], pointRadius: 0, fill: false }
-          ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { weight: 'bold', size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
-      });
-    }
-
+    // LISTA DE INACTIVOS
     function renderInactive(list) {
       document.getElementById('inactivePartnersBody').innerHTML = (list || []).map(n => `<tr class="hover:bg-slate-50"><td class="py-1.5 px-3">${n}</td></tr>`).join('');
     }
