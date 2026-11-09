@@ -110,16 +110,20 @@
     <!-- SECCIÓN 2: TABLAS DE DESGLOSE, NUEVA TABLA PUBLISHERS Y BRANDS SUMMARY -->
     <div id="section-v2" class="space-y-6">
       
-      <!-- 1. TABLAS CPA, CPR, CPL (ORIGINALES Y LIMPIAS) -->
+      <!-- 1. TABLAS CPA, CPR, CPL -->
       <div id="breakdown-tables-container" class="space-y-6"></div>
 
-      <!-- 2. NUEVA TABLA: PUBLISHERS BREAKDOWN REPORT (FORMATO DE TU IMAGEN) -->
+      <!-- 2. TABLA: PUBLISHERS BREAKDOWN REPORT CON BOTÓN SHOW ALL AL LADO DEL TÍTULO -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
-        <div class="flex items-center justify-between pb-1">
+        <div class="flex flex-wrap items-center gap-3 pb-1">
           <span class="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-blue-700"></span>
             PUBLISHER BREAKDOWN (BY ADVERTISER & BRAND)
           </span>
+          <button type="button" id="togglePublisherRowsBtn" onclick="togglePublisherRows()" class="flex items-center gap-1.5 px-3 py-1 bg-[#40513b] hover:bg-[#32402e] text-white border border-slate-900 rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer">
+            <i id="togglePublisherRowsIcon" class="fa-solid fa-chevron-down text-[10px]"></i>
+            <span id="togglePublisherRowsText">Show All</span>
+          </button>
         </div>
 
         <div class="overflow-x-auto">
@@ -144,7 +148,6 @@
                   <button onclick="sortPublisherTable('revenue')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
                 </th>
               </tr>
-              <!-- ENCABEZADO AZUL OSCURO ESTILO CAPTURA -->
               <tr class="bg-[#0c1938] text-white font-black text-xs uppercase tracking-wider select-none text-center">
                 <th class="p-3 text-left w-48 pl-4">PUBLISHER</th>
                 <th class="p-3 text-left">ADVERTISERS</th>
@@ -163,7 +166,7 @@
         </div>
       </div>
 
-      <!-- 3. BRANDS SUMMARY REPORT (LIMPIA) -->
+      <!-- 3. BRANDS SUMMARY REPORT -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex items-center justify-between pb-1">
           <span class="text-xs font-black uppercase text-slate-800 tracking-wide">BRANDS SUMMARY REPORT</span>
@@ -228,6 +231,8 @@
 
   <script>
     let currentRrFactor = 1;
+    let allPubRowsExpanded = false;
+    const DEFAULT_PUB_ROWS_LIMIT = 10;
     const DATA_CACHE = {};
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
@@ -471,7 +476,6 @@
       renderMultiMonth(sDate, eDate);
     }
 
-    // EXTRAER SEGMENTOS DE MEDIA PARTNERS
     function parseMediaPartnerSegment(seg) {
       const match = seg.match(/^([A-Za-z0-9_-]+)\s*\((.*?)\)$/);
       if (!match) return null;
@@ -554,7 +558,7 @@
         const pP = Number((pR - pB).toFixed(2));
         
         const pCpr = isFull ? Math.round(p.cprMtd || 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 && cprVal > 0 ? Math.round(p.cprMtd * cRatio) : 0);
-        const pCprRr = isFull ? Math.round(p.cprRr || 0) : (pCpr > 0 ? Math.round(pCpr * rrFactor) : 0);
+        const pCprRr = isFull ? Math.round(p.cprRr || 0) : (pCpr > 0 ? Math.round(p.cprMtd * rrFactor) : 0);
 
         let st = 'neutral';
         if (pP > 0 && pR > 0) st = 'working-well'; 
@@ -845,7 +849,6 @@
         });
       });
 
-      // Ordenar por Publisher ascendente por defecto
       flatList.sort((a, b) => {
         const pCmp = a.publisher.localeCompare(b.publisher);
         if (pCmp !== 0) return pCmp;
@@ -855,6 +858,7 @@
       if (flatList.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 font-bold">No publisher records available</td></tr>';
         if (tfoot) tfoot.innerHTML = '';
+        applyPublisherRowsLimit();
         return;
       }
 
@@ -897,6 +901,46 @@
           <td class="p-3 text-center font-black text-emerald-700 text-sm pr-4">$${Math.round(totRev).toLocaleString()}</td>
         </tr>`;
       }
+
+      applyPublisherRowsLimit();
+    }
+
+    // BOTÓN SHOW ALL / COLLAPSE ALL PARA LA TABLA PUBLISHER
+    function togglePublisherRows() {
+      allPubRowsExpanded = !allPubRowsExpanded;
+      applyPublisherRowsLimit();
+    }
+
+    function applyPublisherRowsLimit() {
+      const rows = document.querySelectorAll('#publisherBreakdownBody tr.publisher-row');
+      const btn = document.getElementById('togglePublisherRowsBtn');
+      const btnText = document.getElementById('togglePublisherRowsText');
+      const btnIcon = document.getElementById('togglePublisherRowsIcon');
+
+      if (!btn) return;
+
+      if (rows.length <= DEFAULT_PUB_ROWS_LIMIT) {
+        btn.classList.add('hidden');
+        rows.forEach(r => r.classList.remove('hidden'));
+        return;
+      }
+
+      btn.classList.remove('hidden');
+
+      rows.forEach((r, idx) => {
+        if (allPubRowsExpanded || idx < DEFAULT_PUB_ROWS_LIMIT) {
+          r.classList.remove('hidden');
+        } else {
+          r.classList.add('hidden');
+        }
+      });
+
+      if (btnText) {
+        btnText.textContent = allPubRowsExpanded ? 'Collapse All' : 'Show All';
+      }
+      if (btnIcon) {
+        btnIcon.className = allPubRowsExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
+      }
     }
 
     // ORDENAMIENTO EN TABLA PUBLISHER
@@ -925,6 +969,7 @@
       });
 
       rows.forEach(r => tbody.appendChild(r));
+      applyPublisherRowsLimit();
     }
 
     // ORDENAMIENTOS CPA, CPR, CPL
