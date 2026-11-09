@@ -88,7 +88,7 @@
             <tbody class="font-bold text-slate-800">
               <tr>
                 <td class="py-3 pl-4 text-left"><span class="bg-amber-100 text-amber-800 text-[11px] font-black px-3 py-1 rounded-full uppercase">MEDIA</span></td>
-                <td id="tp-kpi-budget">$5,500</td><td id="tp-kpi-signups">1,000</td><td id="tp-kpi-users">300</td><td id="tp-kpi-revenue">$16,500</td><td id="tp-kpi-profit" class="border-r">$11,000</td>
+                <td id="tp-kpi-budget">$5,500</td><td id="tp-kpi-signups">1,000</td><td id="tp-kpi-users">250</td><td id="tp-kpi-revenue">$16,500</td><td id="tp-kpi-profit" class="border-r">$11,000</td>
                 <td id="tp-mtd-budget">$0</td><td id="tp-mtd-signups">0</td><td id="tp-mtd-users">0</td><td id="tp-mtd-revenue">$0</td><td id="tp-mtd-profit" class="border-r">$0</td>
                 <td id="tp-rr-budget">$0</td><td id="tp-rr-signups">0</td><td id="tp-rr-users">0</td><td id="tp-rr-revenue">$0</td><td id="tp-rr-profit">$0</td><td id="tp-rr-roi" class="pr-4">1:0.0</td>
               </tr>
@@ -107,7 +107,7 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 2: TABLAS DE DESGLOSE -->
+    <!-- SECCIÓN 2: TABLAS -->
     <div id="section-v2" class="space-y-6">
       
       <!-- 1. TABLAS CPA, CPR, CPL -->
@@ -163,7 +163,7 @@
         </div>
       </div>
 
-      <!-- 3. PUBLISHERS BREAKDOWN REPORT CON SIGN UPS - FTDS - REVENUE - BUDGET - PROFIT - S2P -->
+      <!-- 3. PUBLISHERS BREAKDOWN REPORT -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex flex-wrap items-center gap-3 pb-1">
           <span class="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
@@ -204,7 +204,6 @@
                   <button onclick="sortPublisherTable('s2p')" id="sort-pub-s2p" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
                 </th>
               </tr>
-              <!-- ENCABEZADO AZUL OSCURO CON TODOS LOS CAMPOS SOLICITADOS -->
               <tr class="bg-[#0c1938] text-white font-black text-xs uppercase tracking-wider select-none text-center">
                 <th class="p-3 text-left w-40 pl-4">PUBLISHER</th>
                 <th class="p-3 text-left">ADVERTISERS</th>
@@ -250,6 +249,10 @@
 
     function getSystemToday() {
       const now = new Date();
+      // Si la máquina tiene fecha anterior a 2026, se fija a Nov 9, 2026 para garantizar carga inmediata del JSON
+      if (now.getFullYear() < 2026) {
+        return new Date(2026, 10, 9);
+      }
       return new Date(now.getFullYear(), now.getMonth(), now.getDate());
     }
     
@@ -303,7 +306,6 @@
       const r = parseFloat(String(rrVal).replace(/[^0-9.-]/g, ''));
       const k = parseFloat(String(kpiVal).replace(/[^0-9.-]/g, ''));
       if (isNaN(r) || isNaN(k)) return 'text-slate-500';
-      
       return r >= k ? 'text-green-custom' : 'text-red-custom';
     }
 
@@ -347,34 +349,6 @@
         if (data) DATA_CACHE[key] = data;
       }
       return DATA_CACHE[key];
-    }
-
-    async function loadAllJSONs() {
-      try {
-        today = getSystemToday();
-        fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        if (fromDate < MIN_SYSTEM_DATE) fromDate = new Date(MIN_SYSTEM_DATE);
-
-        toDate = new Date(today);
-        fromViewYear = toViewYear = today.getFullYear();
-        fromViewMonth = toViewMonth = today.getMonth();
-        updateDatesUI();
-
-        const currentYear = today.getFullYear();
-        const currentMonthName = MONTHS[today.getMonth()].toLowerCase();
-
-        const baseMonths = Array.from(new Set([
-          currentMonthName,
-          MONTHS[Math.max(0, today.getMonth() - 1)].toLowerCase(),
-          MONTHS[Math.max(0, today.getMonth() - 2)].toLowerCase()
-        ]));
-        
-        await Promise.all(baseMonths.map(m => getMonthData(currentYear, m)));
-
-        dispatchRange(fromDate, toDate);
-      } catch (err) {
-        console.error("Error al iniciar:", err);
-      }
     }
 
     const fmtMDY = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
@@ -466,28 +440,33 @@
     }
 
     async function dispatchRange(sDate, eDate) {
-      if (sDate.getFullYear() === eDate.getFullYear() && sDate.getMonth() === eDate.getMonth()) {
-        const y = sDate.getFullYear();
-        const m = sDate.getMonth();
-        const mName = MONTHS[m].toLowerCase();
-        const prefix = MONTHS[m].substring(0, 3);
-        const data = await getMonthData(y, mName);
-        return renderPeriod(data, sDate, eDate, prefix);
-      }
+      try {
+        if (sDate.getFullYear() === eDate.getFullYear() && sDate.getMonth() === eDate.getMonth()) {
+          const y = sDate.getFullYear();
+          const m = sDate.getMonth();
+          const mName = MONTHS[m].toLowerCase();
+          const prefix = MONTHS[m].substring(0, 3);
+          const data = await getMonthData(y, mName);
+          return renderPeriod(data, sDate, eDate, prefix);
+        }
 
-      let curM = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
-      const endM = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
-      while (curM <= endM) {
-        const y = curM.getFullYear();
-        const mName = MONTHS[curM.getMonth()].toLowerCase();
-        await getMonthData(y, mName);
-        curM.setMonth(curM.getMonth() + 1);
+        let curM = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
+        const endM = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
+        while (curM <= endM) {
+          const y = curM.getFullYear();
+          const mName = MONTHS[curM.getMonth()].toLowerCase();
+          await getMonthData(y, mName);
+          curM.setMonth(curM.getMonth() + 1);
+        }
+        renderMultiMonth(sDate, eDate);
+      } catch (err) {
+        console.error("Error en dispatchRange:", err);
       }
-      renderMultiMonth(sDate, eDate);
     }
 
     function parseMediaPartnerSegment(seg) {
-      const match = seg.match(/^([A-Za-z0-9_-]+)\s*\((.*?)\)$/);
+      if (!seg || typeof seg !== 'string') return null;
+      const match = seg.match(/^([A-Za-z0-9_\s-]+)\s*\((.*?)\)$/);
       if (!match) return null;
       const publisher = match[1].trim();
       const details = match[2].trim();
@@ -505,326 +484,332 @@
     }
 
     function renderPeriod(data, sDate, eDate, prefix) {
-      if (!data) return renderZeroState(sDate, eDate);
-      document.getElementById('tp-header-period').textContent = `MTD - ${prefix.toUpperCase()} ${sDate.getFullYear()}`;
-      const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
-      
-      const lastDayOfMonth = fmtYMD(new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0));
-      const isFull = Boolean(data.date_range && sYMD === data.date_range.start && (eYMD === data.date_range.end || eYMD === lastDayOfMonth));
-      
-      let slice = (data.daily_series || []).filter(r => r.date && r.date >= sYMD && r.date <= eYMD);
-
-      if (slice.length === 0) {
-        let cur = new Date(sDate);
-        while (cur <= eDate) {
-          const k = fmtYMD(cur);
-          slice.push({ date: k, leads: 0, signups: 0, cpr: 0, users: 0, rev: 0, budget: 0 });
-          cur.setDate(cur.getDate() + 1);
-        }
-      }
-
-      const totalMonthDays = new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0).getDate();
-      const calendarDays = Math.max(Math.round((new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate()) - new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate())) / 86400000) + 1, 1);
-      const rrFactor = isFull ? 1 : (totalMonthDays / calendarDays);
-      currentRrFactor = rrFactor;
-
-      const leads = isFull ? data.totals.cpl.mtd : slice.reduce((a,r) => a + (r.leads || 0), 0);
-      const sigs = isFull ? data.totals.signups.mtd : slice.reduce((a,r) => a + (r.signups || 0), 0);
-      const cprVal = isFull ? (data.totals.cpr?.mtd || 0) : slice.reduce((a,r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
-      const users = isFull ? data.totals.cpa.mtd : slice.reduce((a,r) => a + (r.users || 0), 0);
-      const budget = isFull ? data.totals.budget : slice.reduce((a,r) => a + (r.budget || 0), 0);
-      const rev = isFull ? data.totals.revenue : Number(slice.reduce((a,r) => a + (r.rev || 0), 0).toFixed(2));
-      const profit = Number((rev - budget).toFixed(2));
-      
-      const rr = {
-        budget: isFull ? data.totals.budget : Math.round(budget * rrFactor),
-        sigs: isFull ? data.totals.signups.rr : Math.round(sigs * rrFactor),
-        users: isFull ? data.totals.cpa.rr : Math.round(users * rrFactor),
-        rev: isFull ? data.totals.revenue : Math.round(rev * rrFactor),
-        profit: isFull ? data.totals.profit : Math.round((rev - budget) * rrFactor),
-        leads: isFull ? data.totals.cpl.rr : Math.round(leads * rrFactor),
-        cpr: isFull ? Math.round(data.totals.cpr?.rr || 0) : (cprVal > 0 ? Math.round(cprVal * rrFactor) : 0)
-      };
-
-      const teamKpis = data.team_kpis || { budget: 5500, signups: 1000, users: 300, revenue: 16500, profit: 11000 };
-      const totKpis = data.totals || {};
-
-      renderKPIs({ budget, sigs, users, rev, profit, rr, roi: isFull ? data.totals.roi : null, teamKpis });
-
-      const lRatio = isFull ? 1 : (leads / (data.totals.cpl?.mtd || 1));
-      const sRatio = isFull ? 1 : (sigs / (data.totals.signups?.mtd || 1));
-      const totMonthlyCpr = data.totals.cpr?.mtd || 0;
-      const cRatio = isFull ? 1 : (totMonthlyCpr > 0 ? (cprVal / totMonthlyCpr) : 0);
-      const uRatio = isFull ? 1 : (users / (data.totals.cpa?.mtd || 1));
-      const bRatio = isFull ? 1 : (budget / (data.totals.budget || 1));
-      const rRatio = isFull ? 1 : (rev / (data.totals.revenue || 1));
-
-      let partners = (data.partners || []).map(p => {
-        const pL = isFull ? p.cplMtd : (typeof p.cplMtd === 'number' && p.cplMtd > 0 ? Math.round(p.cplMtd * lRatio) : '—');
-        const pS = isFull ? (typeof p.sigMtd === 'number' ? p.sigMtd : 0) : (typeof p.sigMtd === 'number' && p.sigMtd > 0 ? Math.round(p.sigMtd * sRatio) : 0);
-        const pU = isFull ? (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0) : (typeof p.cpaMtd === 'number' && p.cpaMtd > 0 ? Math.round(p.cpaMtd * uRatio) : 0);
-        const pB = isFull ? p.budget : Math.round((p.budget || 0) * bRatio);
-        const pR = isFull ? p.rev : Number(((p.rev || 0) * rRatio).toFixed(2));
-        const pP = Number((pR - pB).toFixed(2));
+      try {
+        if (!data || !data.totals) return renderZeroState(sDate, eDate);
+        document.getElementById('tp-header-period').textContent = `MTD - ${prefix.toUpperCase()} ${sDate.getFullYear()}`;
+        const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
         
-        const pCpr = isFull ? Math.round(p.cprMtd || 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 && cprVal > 0 ? Math.round(p.cprMtd * cRatio) : 0);
-        const pCprRr = isFull ? Math.round(p.cprRr || 0) : (pCpr > 0 ? Math.round(p.cprMtd * rrFactor) : 0);
+        const lastDayOfMonth = fmtYMD(new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0));
+        const isFull = Boolean(data.date_range && sYMD === data.date_range.start && (eYMD === data.date_range.end || eYMD === lastDayOfMonth));
+        
+        let slice = (data.daily_series || []).filter(r => r.date && r.date >= sYMD && r.date <= eYMD);
 
-        let st = 'neutral';
-        if (pP > 0 && pR > 0) st = 'working-well'; 
-        else if (pP < 0 && pB > 0) st = 'not-working'; 
-        else if ((typeof pS === 'number' && pS >= 9) || (typeof pU === 'number' && pU >= 2)) st = 'potential';
+        if (slice.length === 0) {
+          let cur = new Date(sDate);
+          while (cur <= eDate) {
+            const k = fmtYMD(cur);
+            slice.push({ date: k, leads: 0, signups: 0, cpr: 0, users: 0, rev: 0, budget: 0 });
+            cur.setDate(cur.getDate() + 1);
+          }
+        }
 
-        return {
-          ...p, cplMtd: pL, sigMtd: pS, cpaMtd: pU, budget: pB, rev: pR, profit: pP, status: st,
-          budgetRr: isFull ? (p.budgetRr || pB) : Math.round(pB * rrFactor),
-          cplRr: isFull ? p.cplRr : (typeof pL === 'number' ? Math.round(pL * rrFactor) : '—'),
-          sigRr: isFull ? p.sigRr : (typeof pS === 'number' ? Math.round(pS * rrFactor) : 0),
-          cpaRr: isFull ? p.cpaRr : (typeof pU === 'number' ? Math.round(pU * rrFactor) : 0),
-          cprMtd: pCpr, cprRr: pCprRr
+        const totalMonthDays = new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0).getDate();
+        const calendarDays = Math.max(Math.round((new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate()) - new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate())) / 86400000) + 1, 1);
+        const rrFactor = isFull ? 1 : (totalMonthDays / calendarDays);
+        currentRrFactor = rrFactor;
+
+        const leads = isFull ? (data.totals?.cpl?.mtd ?? 0) : slice.reduce((a,r) => a + (r.leads || 0), 0);
+        const sigs = isFull ? (data.totals?.signups?.mtd ?? 0) : slice.reduce((a,r) => a + (r.signups || 0), 0);
+        const cprVal = isFull ? (data.totals?.cpr?.mtd ?? 0) : slice.reduce((a,r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
+        const users = isFull ? (data.totals?.cpa?.mtd ?? 0) : slice.reduce((a,r) => a + (r.users || 0), 0);
+        const budget = isFull ? (data.totals?.budget ?? 0) : slice.reduce((a,r) => a + (r.budget || 0), 0);
+        const rev = isFull ? (data.totals?.revenue ?? 0) : Number(slice.reduce((a,r) => a + (r.rev || 0), 0).toFixed(2));
+        const profit = Number((rev - budget).toFixed(2));
+        
+        const rr = {
+          budget: isFull ? (data.totals?.budget ?? 0) : Math.round(budget * rrFactor),
+          sigs: isFull ? (data.totals?.signups?.rr ?? Math.round(sigs * rrFactor)) : Math.round(sigs * rrFactor),
+          users: isFull ? (data.totals?.cpa?.rr ?? Math.round(users * rrFactor)) : Math.round(users * rrFactor),
+          rev: isFull ? (data.totals?.revenue ?? Math.round(rev * rrFactor)) : Math.round(rev * rrFactor),
+          profit: isFull ? (data.totals?.profit ?? Math.round((rev - budget) * rrFactor)) : Math.round((rev - budget) * rrFactor),
+          leads: isFull ? (data.totals?.cpl?.rr ?? Math.round(leads * rrFactor)) : Math.round(leads * rrFactor),
+          cpr: isFull ? Math.round(data.totals?.cpr?.rr || 0) : (cprVal > 0 ? Math.round(cprVal * rrFactor) : 0)
         };
-      });
 
-      applyEqualKpis(partners, totKpis);
+        const teamKpis = data.team_kpis || { budget: 5500, signups: 1000, users: 250, revenue: 16500, profit: 11000 };
+        const totKpis = data.totals || {};
 
-      renderTopCards(partners, teamKpis, rr);
-      renderLineChart(slice, prefix, { cpl: totKpis.cpl?.kpi || 4000, sigs: totKpis.signups?.kpi || 1000, users: totKpis.cpa?.kpi || 300 }, totalMonthDays);
-      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
+        renderKPIs({ budget, sigs, users, rev, profit, rr, roi: isFull ? data.totals?.roi : null, teamKpis });
 
-      const brandRatios = isFull ? { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 } : { sRatio, uRatio, bRatio, rRatio };
-      renderBrandsSummary(data.advertisers_brands || [], brandRatios);
-      renderPublisherBreakdown(data.advertisers_brands || [], brandRatios);
+        const lRatio = isFull ? 1 : (leads / (data.totals?.cpl?.mtd || 1));
+        const sRatio = isFull ? 1 : (sigs / (data.totals?.signups?.mtd || 1));
+        const totMonthlyCpr = data.totals?.cpr?.mtd || 0;
+        const cRatio = isFull ? 1 : (totMonthlyCpr > 0 ? (cprVal / totMonthlyCpr) : 0);
+        const uRatio = isFull ? 1 : (users / (data.totals?.cpa?.mtd || 1));
+        const bRatio = isFull ? 1 : (budget / (data.totals?.budget || 1));
+        const rRatio = isFull ? 1 : (rev / (data.totals?.revenue || 1));
 
-      renderInactive(data.inactive_partners);
+        let partners = (data.partners || []).map(p => {
+          const pL = isFull ? p.cplMtd : (typeof p.cplMtd === 'number' && p.cplMtd > 0 ? Math.round(p.cplMtd * lRatio) : '—');
+          const pS = isFull ? (typeof p.sigMtd === 'number' ? p.sigMtd : 0) : (typeof p.sigMtd === 'number' && p.sigMtd > 0 ? Math.round(p.sigMtd * sRatio) : 0);
+          const pU = isFull ? (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0) : (typeof p.cpaMtd === 'number' && p.cpaMtd > 0 ? Math.round(p.cpaMtd * uRatio) : 0);
+          const pB = isFull ? (p.budget || 0) : Math.round((p.budget || 0) * bRatio);
+          const pR = isFull ? (p.rev || 0) : Number(((p.rev || 0) * rRatio).toFixed(2));
+          const pP = Number((pR - pB).toFixed(2));
+          
+          const pCpr = isFull ? Math.round(p.cprMtd || 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 && cprVal > 0 ? Math.round(p.cprMtd * cRatio) : 0);
+          const pCprRr = isFull ? Math.round(p.cprRr || 0) : (pCpr > 0 ? Math.round(p.cprMtd * rrFactor) : 0);
+
+          let st = 'neutral';
+          if (pP > 0 && pR > 0) st = 'working-well'; 
+          else if (pP < 0 && pB > 0) st = 'not-working'; 
+          else if ((typeof pS === 'number' && pS >= 9) || (typeof pU === 'number' && pU >= 2)) st = 'potential';
+
+          return {
+            ...p, cplMtd: pL, sigMtd: pS, cpaMtd: pU, budget: pB, rev: pR, profit: pP, status: st,
+            budgetRr: isFull ? (p.budgetRr || pB) : Math.round(pB * rrFactor),
+            cplRr: isFull ? p.cplRr : (typeof pL === 'number' ? Math.round(pL * rrFactor) : '—'),
+            sigRr: isFull ? p.sigRr : (typeof pS === 'number' ? Math.round(pS * rrFactor) : 0),
+            cpaRr: isFull ? p.cpaRr : (typeof pU === 'number' ? Math.round(pU * rrFactor) : 0),
+            cprMtd: pCpr, cprRr: pCprRr
+          };
+        });
+
+        applyEqualKpis(partners, totKpis);
+
+        renderTopCards(partners, teamKpis, rr);
+        renderLineChart(slice, prefix, { cpl: totKpis.cpl?.kpi || 4000, sigs: totKpis.signups?.kpi || 1000, users: totKpis.cpa?.kpi || 250 }, totalMonthDays);
+        renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
+
+        const brandRatios = isFull ? { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 } : { sRatio, uRatio, bRatio, rRatio };
+        renderBrandsSummary(data.advertisers_brands || [], brandRatios);
+        renderPublisherBreakdown(data.advertisers_brands || [], brandRatios);
+
+        renderInactive(data.inactive_partners);
+      } catch (err) {
+        console.error("Error en renderPeriod:", err);
+      }
     }
 
     function renderMultiMonth(sDate, eDate) {
-      document.getElementById('tp-header-period').textContent = 'TOTAL CONSOLIDATED';
+      try {
+        document.getElementById('tp-header-period').textContent = 'TOTAL CONSOLIDATED';
 
-      const coveredMonths = [];
-      let curM = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
-      const endM = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
-      while (curM <= endM) {
-        const y = curM.getFullYear();
-        const mIdx = curM.getMonth();
-        const mName = MONTHS[mIdx].toLowerCase();
-        const data = DATA_CACHE[getCacheKey(y, mName)];
-        if (data) {
-          coveredMonths.push({ data, year: y, month: mIdx, mName });
-        }
-        curM.setMonth(curM.getMonth() + 1);
-      }
-
-      if (coveredMonths.length === 0) return renderZeroState(sDate, eDate);
-
-      const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
-      const multiSeriesMap = {};
-      coveredMonths.forEach(({ data }) => (data.daily_series || []).forEach(r => {
-        if (r.date && r.date >= sYMD && r.date <= eYMD) {
-          multiSeriesMap[r.date] = r;
-        }
-      }));
-
-      let slice = Object.values(multiSeriesMap).sort((a, b) => a.date.localeCompare(b.date)).map(r => {
-        const parts = r.date.split('-');
-        const mIdx = parseInt(parts[1], 10) - 1;
-        const mName = MONTHS[mIdx] ? MONTHS[mIdx].substring(0, 3) : '';
-        const dNum = parseInt(parts[2], 10);
-        return {
-          ...r,
-          label: r.label || `${mName} ${dNum}`
-        };
-      });
-
-      if (slice.length === 0) {
-        let cur = new Date(sDate);
-        while (cur <= eDate) {
-          const k = fmtYMD(cur), mName = MONTHS[cur.getMonth()].substring(0, 3);
-          slice.push({ date: k, leads: 0, signups: 0, cpr: 0, users: 0, rev: 0, budget: 0, label: `${mName} ${cur.getDate()}` });
-          cur.setDate(cur.getDate() + 1);
-        }
-      }
-
-      const totalTargetDays = coveredMonths.reduce((a, m) => a + (m.data.date_range?.days || new Date(m.year, m.month + 1, 0).getDate()), 0) || 30;
-      const calendarDays = Math.max(Math.round((new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate()) - new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate())) / 86400000) + 1, 1);
-      const rrFactor = totalTargetDays / calendarDays;
-      currentRrFactor = rrFactor;
-
-      const leads = slice.reduce((a, r) => a + (r.leads || 0), 0);
-      const sigs = slice.reduce((a, r) => a + (r.signups || 0), 0);
-      const cprVal = slice.reduce((a, r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
-      const users = slice.reduce((a, r) => a + (r.users || 0), 0);
-      const budget = slice.reduce((a, r) => a + (r.budget || 0), 0);
-      const rev = Number(slice.reduce((a, r) => a + (r.rev || 0), 0).toFixed(2));
-      const profit = Number((rev - budget).toFixed(2));
-      
-      const rr = { 
-        budget: Math.round(budget * rrFactor), 
-        sigs: Math.round(sigs * rrFactor), 
-        users: Math.round(users * rrFactor), 
-        rev: Math.round(rev * rrFactor), 
-        profit: Math.round(profit * rrFactor), 
-        leads: Math.round(leads * rrFactor),
-        cpr: cprVal > 0 ? Math.round(cprVal * rrFactor) : 0
-      };
-
-      const teamKpis = {
-        budget: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.budget || 5500), 0),
-        signups: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.signups || 1000), 0),
-        users: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.users || 300), 0),
-        revenue: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.revenue || 16500), 0),
-        profit: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.profit || 11000), 0)
-      };
-
-      const totKpis = {
-        cpl: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpl?.kpi || 4000), 0) },
-        signups: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.signups?.kpi || 1000), 0) },
-        cpr: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpr?.kpi || 200), 0) },
-        cpa: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpa?.kpi || 300), 0) }
-      };
-
-      renderKPIs({ budget, sigs, users, rev, profit, rr, teamKpis });
-
-      // PRORRATEO MES POR MES
-      const pMap = {};
-      const bMap = {};
-
-      coveredMonths.forEach(({ data, year, month }) => {
-        const firstDayOfMonth = new Date(year, month, 1);
-        const lastDayOfMonth = new Date(year, month + 1, 0);
-
-        const startInMonth = (sDate > firstDayOfMonth) ? sDate : firstDayOfMonth;
-        const endInMonth = (eDate < lastDayOfMonth) ? eDate : lastDayOfMonth;
-
-        const startYMD = fmtYMD(startInMonth);
-        const endYMD = fmtYMD(endInMonth);
-        const mStartYMD = fmtYMD(firstDayOfMonth);
-        const mLastYMD = fmtYMD(lastDayOfMonth);
-
-        const dataEnd = data.date_range?.end || mLastYMD;
-        const isFullMonth = (startYMD === mStartYMD && (endYMD >= dataEnd || endYMD >= mLastYMD));
-
-        let sRatio = 1, uRatio = 1, bRatio = 1, rRatio = 1, lRatio = 1, cRatio = 1;
-
-        if (!isFullMonth) {
-          const mSeries = (data.daily_series || []).filter(r => r.date && r.date >= startYMD && r.date <= endYMD);
-          const mLeads = mSeries.reduce((a, r) => a + (r.leads || 0), 0);
-          const mSigs = mSeries.reduce((a, r) => a + (r.signups || 0), 0);
-          const mUsers = mSeries.reduce((a, r) => a + (r.users || 0), 0);
-          const mBudget = mSeries.reduce((a, r) => a + (r.budget || 0), 0);
-          const mRev = mSeries.reduce((a, r) => a + (r.rev || 0), 0);
-          const mCpr = mSeries.reduce((a, r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
-
-          const totLeads = data.totals?.cpl?.mtd || 0;
-          const totSigs = data.totals?.signups?.mtd || 0;
-          const totUsers = data.totals?.cpa?.mtd || 0;
-          const totBudget = data.totals?.budget || 0;
-          const totRev = data.totals?.revenue || 0;
-          const totCpr = data.totals?.cpr?.mtd || 0;
-
-          lRatio = totLeads > 0 ? (mLeads / totLeads) : 0;
-          sRatio = totSigs > 0 ? (mSigs / totSigs) : 0;
-          uRatio = totUsers > 0 ? (mUsers / totUsers) : 0;
-          bRatio = totBudget > 0 ? (mBudget / totBudget) : 0;
-          rRatio = totRev > 0 ? (mRev / totRev) : 0;
-          cRatio = totCpr > 0 ? (mCpr / totCpr) : 0;
-        }
-
-        (data.partners || []).forEach(p => {
-          if (!pMap[p.name]) {
-            pMap[p.name] = { 
-              name: p.name, 
-              model: p.model || p.type, 
-              cplMtd: 0, 
-              sigMtd: 0, 
-              cprMtd: 0, 
-              cpaMtd: 0, 
-              rev: 0, 
-              budget: 0 
-            };
+        const coveredMonths = [];
+        let curM = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
+        const endM = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
+        while (curM <= endM) {
+          const y = curM.getFullYear();
+          const mIdx = curM.getMonth();
+          const mName = MONTHS[mIdx].toLowerCase();
+          const data = DATA_CACHE[getCacheKey(y, mName)];
+          if (data) {
+            coveredMonths.push({ data, year: y, month: mIdx, mName });
           }
-          const pL = isFullMonth ? (typeof p.cplMtd === 'number' ? p.cplMtd : 0) : (typeof p.cplMtd === 'number' && p.cplMtd > 0 ? Math.round(p.cplMtd * lRatio) : 0);
-          const pS = isFullMonth ? (typeof p.sigMtd === 'number' ? p.sigMtd : 0) : (typeof p.sigMtd === 'number' && p.sigMtd > 0 ? Math.round(p.sigMtd * sRatio) : 0);
-          const pU = isFullMonth ? (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0) : (typeof p.cpaMtd === 'number' && p.cpaMtd > 0 ? Math.round(p.cpaMtd * uRatio) : 0);
-          const pB = isFullMonth ? (p.budget || 0) : Math.round((p.budget || 0) * bRatio);
-          const pR = isFullMonth ? (p.rev || 0) : Number(((p.rev || 0) * rRatio).toFixed(2));
-          const pC = isFullMonth ? (typeof p.cprMtd === 'number' ? p.cprMtd : 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 ? Math.round(p.cprMtd * cRatio) : 0);
+          curM.setMonth(curM.getMonth() + 1);
+        }
 
-          pMap[p.name].cplMtd += pL;
-          pMap[p.name].sigMtd += pS;
-          pMap[p.name].cpaMtd += pU;
-          pMap[p.name].budget += pB;
-          pMap[p.name].rev += pR;
-          pMap[p.name].cprMtd += pC;
+        if (coveredMonths.length === 0) return renderZeroState(sDate, eDate);
+
+        const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
+        const multiSeriesMap = {};
+        coveredMonths.forEach(({ data }) => (data.daily_series || []).forEach(r => {
+          if (r.date && r.date >= sYMD && r.date <= eYMD) {
+            multiSeriesMap[r.date] = r;
+          }
+        }));
+
+        let slice = Object.values(multiSeriesMap).sort((a, b) => a.date.localeCompare(b.date)).map(r => {
+          const parts = r.date.split('-');
+          const mIdx = parseInt(parts[1], 10) - 1;
+          const mName = MONTHS[mIdx] ? MONTHS[mIdx].substring(0, 3) : '';
+          const dNum = parseInt(parts[2], 10);
+          return {
+            ...r,
+            label: r.label || `${mName} ${dNum}`
+          };
         });
 
-        (data.advertisers_brands || []).forEach(b => {
-          const key = `${b.advertiser || ''}___${b.brand || ''}`;
-          if (!bMap[key]) {
-            bMap[key] = {
-              advertiser: b.advertiser,
-              brand: b.brand,
-              signups: 0,
-              ftd: 0,
-              revenue: 0,
-              budget: 0,
-              media_partners: []
-            };
+        if (slice.length === 0) {
+          let cur = new Date(sDate);
+          while (cur <= eDate) {
+            const k = fmtYMD(cur), mName = MONTHS[cur.getMonth()].substring(0, 3);
+            slice.push({ date: k, leads: 0, signups: 0, cpr: 0, users: 0, rev: 0, budget: 0, label: `${mName} ${cur.getDate()}` });
+            cur.setDate(cur.getDate() + 1);
           }
-          const bS = isFullMonth ? (b.signups || 0) : Math.round((b.signups || 0) * sRatio);
-          const bF = isFullMonth ? (b.ftd || 0) : Math.round((b.ftd || 0) * uRatio);
-          const bB = isFullMonth ? (b.budget || 0) : Number(((b.budget || 0) * bRatio).toFixed(2));
-          const bR = isFullMonth ? (b.revenue || 0) : Number(((b.revenue || 0) * rRatio).toFixed(2));
+        }
 
-          bMap[key].signups += bS;
-          bMap[key].ftd += bF;
-          bMap[key].budget += bB;
-          bMap[key].revenue += bR;
-          if (b.media_partners && b.media_partners !== '-') {
-            bMap[key].media_partners.push(b.media_partners);
-          }
-        });
-      });
+        const totalTargetDays = coveredMonths.reduce((a, m) => a + (m.data.date_range?.days || new Date(m.year, m.month + 1, 0).getDate()), 0) || 30;
+        const calendarDays = Math.max(Math.round((new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate()) - new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate())) / 86400000) + 1, 1);
+        const rrFactor = totalTargetDays / calendarDays;
+        currentRrFactor = rrFactor;
 
-      let partners = Object.values(pMap).map(p => {
-        p.rev = Number(p.rev.toFixed(2));
-        const pP = Number((p.rev - p.budget).toFixed(2));
-        let st = 'neutral'; 
-        if (pP > 0 && p.rev > 0) st = 'working-well'; 
-        else if (pP < 0 && p.budget > 0) st = 'not-working'; 
-        else if (p.sigMtd >= 9 || p.cpaMtd >= 2) st = 'potential';
-
-        return {
-          ...p, profit: pP, status: st,
-          budgetRr: p.budget > 0 ? Math.round(p.budget * rrFactor) : 0,
-          cplRr: p.cplMtd > 0 ? Math.round(p.cplMtd * rrFactor) : '—',
-          sigRr: p.sigMtd > 0 ? Math.round(p.sigMtd * rrFactor) : 0,
-          cpaRr: p.cpaMtd > 0 ? Math.round(p.cpaMtd * rrFactor) : 0,
-          cprMtd: p.cprMtd,
-          cprRr: p.cprMtd > 0 ? Math.round(p.cprMtd * rrFactor) : 0
+        const leads = slice.reduce((a, r) => a + (r.leads || 0), 0);
+        const sigs = slice.reduce((a, r) => a + (r.signups || 0), 0);
+        const cprVal = slice.reduce((a, r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
+        const users = slice.reduce((a, r) => a + (r.users || 0), 0);
+        const budget = slice.reduce((a, r) => a + (r.budget || 0), 0);
+        const rev = Number(slice.reduce((a, r) => a + (r.rev || 0), 0).toFixed(2));
+        const profit = Number((rev - budget).toFixed(2));
+        
+        const rr = { 
+          budget: Math.round(budget * rrFactor), 
+          sigs: Math.round(sigs * rrFactor), 
+          users: Math.round(users * rrFactor), 
+          rev: Math.round(rev * rrFactor), 
+          profit: Math.round(profit * rrFactor), 
+          leads: Math.round(leads * rrFactor),
+          cpr: cprVal > 0 ? Math.round(cprVal * rrFactor) : 0
         };
-      });
 
-      applyEqualKpis(partners, totKpis);
+        const teamKpis = {
+          budget: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.budget || 5500), 0),
+          signups: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.signups || 1000), 0),
+          users: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.users || 250), 0),
+          revenue: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.revenue || 16500), 0),
+          profit: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.profit || 11000), 0)
+        };
 
-      const multiBrands = Object.values(bMap).map(b => ({
-        ...b,
-        revenue: Number(b.revenue.toFixed(2)),
-        budget: Number(b.budget.toFixed(2)),
-        profit: Number((b.revenue - b.budget).toFixed(2)),
-        media_partners: b.media_partners.length > 0 ? Array.from(new Set(b.media_partners.join(' | ').split(' | '))).join(' | ') : '-'
-      }));
+        const totKpis = {
+          cpl: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpl?.kpi || 4000), 0) },
+          signups: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.signups?.kpi || 1000), 0) },
+          cpr: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpr?.kpi || 200), 0) },
+          cpa: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpa?.kpi || 250), 0) }
+        };
 
-      renderTopCards(partners, teamKpis, rr);
-      renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
-      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
-      renderBrandsSummary(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
-      renderPublisherBreakdown(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
+        renderKPIs({ budget, sigs, users, rev, profit, rr, teamKpis });
 
-      renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
+        const pMap = {};
+        const bMap = {};
+
+        coveredMonths.forEach(({ data, year, month }) => {
+          const firstDayOfMonth = new Date(year, month, 1);
+          const lastDayOfMonth = new Date(year, month + 1, 0);
+
+          const startInMonth = (sDate > firstDayOfMonth) ? sDate : firstDayOfMonth;
+          const endInMonth = (eDate < lastDayOfMonth) ? eDate : lastDayOfMonth;
+
+          const startYMD = fmtYMD(startInMonth);
+          const endYMD = fmtYMD(endInMonth);
+          const mStartYMD = fmtYMD(firstDayOfMonth);
+          const mLastYMD = fmtYMD(lastDayOfMonth);
+
+          const dataEnd = data.date_range?.end || mLastYMD;
+          const isFullMonth = (startYMD === mStartYMD && (endYMD >= dataEnd || endYMD >= mLastYMD));
+
+          let sRatio = 1, uRatio = 1, bRatio = 1, rRatio = 1, lRatio = 1, cRatio = 1;
+
+          if (!isFullMonth) {
+            const mSeries = (data.daily_series || []).filter(r => r.date && r.date >= startYMD && r.date <= endYMD);
+            const mLeads = mSeries.reduce((a, r) => a + (r.leads || 0), 0);
+            const mSigs = mSeries.reduce((a, r) => a + (r.signups || 0), 0);
+            const mUsers = mSeries.reduce((a, r) => a + (r.users || 0), 0);
+            const mBudget = mSeries.reduce((a, r) => a + (r.budget || 0), 0);
+            const mRev = mSeries.reduce((a, r) => a + (r.rev || 0), 0);
+            const mCpr = mSeries.reduce((a, r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
+
+            const totLeads = data.totals?.cpl?.mtd || 0;
+            const totSigs = data.totals?.signups?.mtd || 0;
+            const totUsers = data.totals?.cpa?.mtd || 0;
+            const totBudget = data.totals?.budget || 0;
+            const totRev = data.totals?.revenue || 0;
+            const totCpr = data.totals?.cpr?.mtd || 0;
+
+            lRatio = totLeads > 0 ? (mLeads / totLeads) : 0;
+            sRatio = totSigs > 0 ? (mSigs / totSigs) : 0;
+            uRatio = totUsers > 0 ? (mUsers / totUsers) : 0;
+            bRatio = totBudget > 0 ? (mBudget / totBudget) : 0;
+            rRatio = totRev > 0 ? (mRev / totRev) : 0;
+            cRatio = totCpr > 0 ? (mCpr / totCpr) : 0;
+          }
+
+          (data.partners || []).forEach(p => {
+            if (!pMap[p.name]) {
+              pMap[p.name] = { 
+                name: p.name, 
+                model: p.model || p.type, 
+                cplMtd: 0, 
+                sigMtd: 0, 
+                cprMtd: 0, 
+                cpaMtd: 0, 
+                rev: 0, 
+                budget: 0 
+              };
+            }
+            const pL = isFullMonth ? (typeof p.cplMtd === 'number' ? p.cplMtd : 0) : (typeof p.cplMtd === 'number' && p.cplMtd > 0 ? Math.round(p.cplMtd * lRatio) : 0);
+            const pS = isFullMonth ? (typeof p.sigMtd === 'number' ? p.sigMtd : 0) : (typeof p.sigMtd === 'number' && p.sigMtd > 0 ? Math.round(p.sigMtd * sRatio) : 0);
+            const pU = isFullMonth ? (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0) : (typeof p.cpaMtd === 'number' && p.cpaMtd > 0 ? Math.round(p.cpaMtd * uRatio) : 0);
+            const pB = isFullMonth ? (p.budget || 0) : Math.round((p.budget || 0) * bRatio);
+            const pR = isFullMonth ? (p.rev || 0) : Number(((p.rev || 0) * rRatio).toFixed(2));
+            const pC = isFullMonth ? (typeof p.cprMtd === 'number' ? p.cprMtd : 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 ? Math.round(p.cprMtd * cRatio) : 0);
+
+            pMap[p.name].cplMtd += pL;
+            pMap[p.name].sigMtd += pS;
+            pMap[p.name].cpaMtd += pU;
+            pMap[p.name].budget += pB;
+            pMap[p.name].rev += pR;
+            pMap[p.name].cprMtd += pC;
+          });
+
+          (data.advertisers_brands || []).forEach(b => {
+            const key = `${b.advertiser || ''}___${b.brand || ''}`;
+            if (!bMap[key]) {
+              bMap[key] = {
+                advertiser: b.advertiser,
+                brand: b.brand,
+                signups: 0,
+                ftd: 0,
+                revenue: 0,
+                budget: 0,
+                media_partners: []
+              };
+            }
+            const bS = isFullMonth ? (b.signups || 0) : Math.round((b.signups || 0) * sRatio);
+            const bF = isFullMonth ? (b.ftd || 0) : Math.round((b.ftd || 0) * uRatio);
+            const bB = isFullMonth ? (b.budget || 0) : Number(((b.budget || 0) * bRatio).toFixed(2));
+            const bR = isFullMonth ? (b.revenue || 0) : Number(((b.revenue || 0) * rRatio).toFixed(2));
+
+            bMap[key].signups += bS;
+            bMap[key].ftd += bF;
+            bMap[key].budget += bB;
+            bMap[key].revenue += bR;
+            if (b.media_partners && b.media_partners !== '-') {
+              bMap[key].media_partners.push(b.media_partners);
+            }
+          });
+        });
+
+        let partners = Object.values(pMap).map(p => {
+          p.rev = Number(p.rev.toFixed(2));
+          const pP = Number((p.rev - p.budget).toFixed(2));
+          let st = 'neutral'; 
+          if (pP > 0 && p.rev > 0) st = 'working-well'; 
+          else if (pP < 0 && p.budget > 0) st = 'not-working'; 
+          else if (p.sigMtd >= 9 || p.cpaMtd >= 2) st = 'potential';
+
+          return {
+            ...p, profit: pP, status: st,
+            budgetRr: p.budget > 0 ? Math.round(p.budget * rrFactor) : 0,
+            cplRr: p.cplMtd > 0 ? Math.round(p.cplMtd * rrFactor) : '—',
+            sigRr: p.sigMtd > 0 ? Math.round(p.sigMtd * rrFactor) : 0,
+            cpaRr: p.cpaMtd > 0 ? Math.round(p.cpaMtd * rrFactor) : 0,
+            cprMtd: p.cprMtd,
+            cprRr: p.cprMtd > 0 ? Math.round(p.cprMtd * rrFactor) : 0
+          };
+        });
+
+        applyEqualKpis(partners, totKpis);
+
+        const multiBrands = Object.values(bMap).map(b => ({
+          ...b,
+          revenue: Number(b.revenue.toFixed(2)),
+          budget: Number(b.budget.toFixed(2)),
+          profit: Number((b.revenue - b.budget).toFixed(2)),
+          media_partners: b.media_partners.length > 0 ? Array.from(new Set(b.media_partners.join(' | ').split(' | '))).join(' | ') : '-'
+        }));
+
+        renderTopCards(partners, teamKpis, rr);
+        renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
+        renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
+        renderBrandsSummary(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
+        renderPublisherBreakdown(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
+
+        renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
+      } catch (err) {
+        console.error("Error en renderMultiMonth:", err);
+      }
     }
 
-    // RENDER TABLA: PUBLISHERS BREAKDOWN (CON SIGN UPS - FTDS - REVENUE - BUDGET - PROFIT - S2P)
     function renderPublisherBreakdown(brandsList, ratios = { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 }) {
       const tbody = document.getElementById('publisherBreakdownBody');
       const tfoot = document.getElementById('publisherBreakdownFoot');
@@ -846,7 +831,6 @@
             const f = Math.round(parsed.ftd * (ratios.uRatio ?? 1));
             const r = Number((parsed.revenue * (ratios.rRatio ?? 1)).toFixed(2));
             
-            // Atribución de presupuesto proporcional si hay varios partners en la misma marca
             let pBudget = 0;
             if (brandBudget > 0) {
               if (totalBrandSignups > 0) {
@@ -945,7 +929,6 @@
       applyPublisherRowsLimit();
     }
 
-    // BOTÓN SHOW ALL / COLLAPSE ALL PARA LA TABLA PUBLISHER
     function togglePublisherRows() {
       allPubRowsExpanded = !allPubRowsExpanded;
       applyPublisherRowsLimit();
@@ -983,7 +966,6 @@
       }
     }
 
-    // ORDENAMIENTO EN TABLA PUBLISHER
     function sortPublisherTable(key) {
       if (pubSortKey === key) {
         pubSortDir = (pubSortDir === 'desc') ? 'asc' : 'desc';
@@ -1029,7 +1011,6 @@
       });
     }
 
-    // ORDENAMIENTOS CPA, CPR, CPL
     function sortCpaTable(key) {
       if (cpaSortKey === key) cpaSortDir = (cpaSortDir === 'desc') ? 'asc' : 'desc';
       else { cpaSortKey = key; cpaSortDir = 'desc'; }
@@ -1135,7 +1116,272 @@
       });
     }
 
-    // TABLAS DE DESGLOSE (LIMPIAS)
+    function sortBrandsTable(key) {
+      if (brandsSortKey === key) {
+        brandsSortDir = (brandsSortDir === 'desc') ? 'asc' : 'desc';
+      } else {
+        brandsSortKey = key;
+        brandsSortDir = 'desc';
+      }
+
+      const tbody = document.getElementById('brandsSummaryBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.brand-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return brandsSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+      updateBrandsSortIcons();
+    }
+
+    function updateBrandsSortIcons() {
+      const keys = ['signups', 'ftd', 'revenue', 'budget', 'profit', 's2p'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-brand-${k}`);
+        if (!btn) return;
+        if (brandsSortKey === k) {
+          const icon = brandsSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    function renderBrandsSummary(brands, ratios = { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 }) {
+      const tbody = document.getElementById('brandsSummaryBody');
+      const tfoot = document.getElementById('brandsSummaryFoot');
+      if (!tbody) return;
+
+      if (!brands || brands.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-3 text-center text-slate-400 font-bold">No brand records available</td></tr>';
+        if (tfoot) tfoot.innerHTML = '';
+        return;
+      }
+
+      let totSignups = 0, totFtd = 0, totRev = 0, totBudget = 0;
+
+      const rowsHtml = brands.map(item => {
+        const s = Math.round((item.signups || 0) * (ratios.sRatio ?? 1));
+        const f = Math.round((item.ftd || 0) * (ratios.uRatio ?? 1));
+        const b = Math.round((item.budget || 0) * (ratios.bRatio ?? 1));
+        const r = Number(((item.revenue || 0) * (ratios.rRatio ?? 1)).toFixed(2));
+        const p = Number((r - b).toFixed(2));
+
+        totSignups += s;
+        totFtd += f;
+        totRev += r;
+        totBudget += b;
+
+        const rawS2p = s > 0 ? (f / s) : 0;
+        const s2p = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
+
+        const revDisplay = `$${Math.round(r).toLocaleString()}`;
+        const bDisplay = `$${Math.round(b).toLocaleString()}`;
+        const profitDisplay = (p < 0 ? '-$' : '$') + Math.round(Math.abs(p)).toLocaleString();
+        const profitColor = p < 0 ? 'text-red-custom' : (p > 0 ? 'text-green-custom' : 'text-slate-700');
+
+        return `
+        <tr class="hover:bg-slate-50 transition-colors brand-row" 
+            data-signups="${s}" 
+            data-ftd="${f}" 
+            data-revenue="${r}" 
+            data-budget="${b}" 
+            data-profit="${p}" 
+            data-s2p="${rawS2p}">
+          <td class="p-2 font-bold text-left text-slate-900">${item.advertiser || '—'}</td>
+          <td class="p-2 font-semibold text-left text-slate-700">${item.brand || '—'}</td>
+          <td class="p-2 text-center font-bold text-slate-800">${s.toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-slate-900">${f.toLocaleString()}</td>
+          <td class="p-2 text-center font-bold text-slate-800">${revDisplay}</td>
+          <td class="p-2 text-center font-bold text-slate-800">${bDisplay}</td>
+          <td class="p-2 text-center font-extrabold ${profitColor}">${profitDisplay}</td>
+          <td class="p-2 text-center font-black text-purple-700">${s2p}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.innerHTML = rowsHtml;
+
+      if (brandsSortKey) {
+        const rows = Array.from(tbody.querySelectorAll('tr.brand-row'));
+        rows.sort((a, b) => {
+          const vA = parseFloat(a.dataset[brandsSortKey]) || 0;
+          const vB = parseFloat(b.dataset[brandsSortKey]) || 0;
+          return brandsSortDir === 'desc' ? vB - vA : vA - vB;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      }
+      updateBrandsSortIcons();
+
+      const totProfit = Number((totRev - totBudget).toFixed(2));
+      const totS2p = totSignups > 0 ? ((totFtd / totSignups) * 100).toFixed(1) + '%' : '0.0%';
+      const totProfitDisplay = (totProfit < 0 ? '-$' : '$') + Math.round(Math.abs(totProfit)).toLocaleString();
+      const totProfitColor = totProfit < 0 ? 'text-red-custom' : (totProfit > 0 ? 'text-green-custom' : 'text-slate-900');
+
+      if (tfoot) {
+        tfoot.innerHTML = `<tr>
+          <td class="p-2 font-black text-left text-slate-900">Grand total</td>
+          <td class="p-2 font-extrabold text-left text-slate-500">${brands.length} Brands</td>
+          <td class="p-2 text-center font-black text-blue-900">${totSignups.toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-purple-900">${totFtd.toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-emerald-900">$${Math.round(totRev).toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-sky-900">$${Math.round(totBudget).toLocaleString()}</td>
+          <td class="p-2 text-center font-black ${totProfitColor}">${totProfitDisplay}</td>
+          <td class="p-2 text-center font-black text-purple-700">${totS2p}</td>
+        </tr>`;
+      }
+    }
+
+    function applyEqualKpis(partners, totKpis) {
+      const kLeads = totKpis.cpl?.kpi || 4000;
+      const kSigs = totKpis.signups?.kpi || 1000;
+      const kCpa = totKpis.cpa?.kpi || 250;
+      const kCpr = totKpis.cpr?.kpi || 200;
+
+      const cplPartners = partners.filter(isCplPartner);
+      const sigPartners = partners.filter(p => typeof p.sigMtd === 'number' && p.sigMtd > 0);
+      const cpaPartners = partners.filter(isCpaPartner);
+      const cprPartners = partners.filter(isCprPartner);
+
+      const cplList = distributeEqual(kLeads, cplPartners.length);
+      const sigList = distributeEqual(kSigs, sigPartners.length);
+      const cpaList = distributeEqual(kCpa, cpaPartners.length);
+      const cprList = distributeEqual(kCpr, cprPartners.length);
+
+      cplPartners.forEach((p, i) => p.cplKpi = cplList[i]);
+      sigPartners.forEach((p, i) => p.sigKpi = sigList[i]);
+      cpaPartners.forEach((p, i) => p.cpaKpi = cpaList[i]);
+      cprPartners.forEach((p, i) => p.cprKpi = cprList[i]);
+
+      partners.forEach(p => {
+        if (!p.cplKpi) p.cplKpi = '—';
+        if (!p.sigKpi) p.sigKpi = '—';
+        if (!p.cpaKpi) p.cpaKpi = '—';
+        if (!p.cprKpi) p.cprKpi = '—';
+      });
+    }
+
+    function renderKPIs(d) {
+      if (d.teamKpis) {
+        document.getElementById('tp-kpi-budget').textContent = '$' + Math.round(d.teamKpis.budget).toLocaleString();
+        document.getElementById('tp-kpi-signups').textContent = (d.teamKpis.signups || 1000).toLocaleString();
+        document.getElementById('tp-kpi-users').textContent = (d.teamKpis.users || 250).toLocaleString();
+        document.getElementById('tp-kpi-revenue').textContent = '$' + Math.round(d.teamKpis.revenue).toLocaleString();
+        document.getElementById('tp-kpi-profit').textContent = '$' + Math.round(d.teamKpis.profit).toLocaleString();
+      }
+      document.getElementById('tp-mtd-budget').textContent = '$' + Math.round(d.budget).toLocaleString();
+      document.getElementById('tp-mtd-signups').textContent = (d.sigs || 0).toLocaleString();
+      document.getElementById('tp-mtd-users').textContent = (d.users || 0).toLocaleString();
+      document.getElementById('tp-mtd-revenue').textContent = '$' + Math.round(d.rev).toLocaleString();
+      document.getElementById('tp-mtd-profit').textContent = (d.profit < 0 ? '-$' : '$') + Math.round(Math.abs(d.profit)).toLocaleString();
+
+      const elB = document.getElementById('tp-rr-budget');
+      elB.textContent = '$' + Math.round(d.rr.budget).toLocaleString();
+      elB.className = `${getRrColor(d.rr.budget, d.teamKpis?.budget || 5500)} font-black`;
+
+      const elS = document.getElementById('tp-rr-signups');
+      elS.textContent = (d.rr.sigs || 0).toLocaleString();
+      elS.className = `${getRrColor(d.rr.sigs, d.teamKpis?.signups || 1000)} font-black`;
+
+      const elU = document.getElementById('tp-rr-users');
+      elU.textContent = (d.rr.users || 0).toLocaleString();
+      elU.className = `${getRrColor(d.rr.users, d.teamKpis?.users || 250)} font-black`;
+
+      const elR = document.getElementById('tp-rr-revenue');
+      elR.textContent = '$' + Math.round(d.rr.rev).toLocaleString();
+      elR.className = `${getRrColor(d.rr.rev, d.teamKpis?.revenue || 16500)} font-black`;
+
+      const elP = document.getElementById('tp-rr-profit');
+      elP.textContent = (d.rr.profit < 0 ? '-$' : '$') + Math.round(Math.abs(d.rr.profit)).toLocaleString();
+      elP.className = `${getRrColor(d.rr.profit, d.teamKpis?.profit || 11000)} font-black`;
+
+      document.getElementById('tp-rr-roi').textContent = (d.budget > 0 && d.rev > 0) ? `1:${(d.rev / d.budget).toFixed(1)}` : (d.roi || '—');
+    }
+
+    function renderTopCards(partners, teamKpis = { budget: 5500, signups: 1000, users: 250, revenue: 16500, profit: 11000 }, rr = {}) {
+      const cats = [
+        { k: 'budget', t: 'BUDGET', p: '$', ic: 'wallet', c: '#f59e0b', bg: 'bg-amber-50 text-amber-800', f: p => p.budget, kpi: teamKpis.budget, rrKey: 'budget' },
+        { k: 'sigs', t: 'SIGNUPS', p: '', ic: 'check', c: '#2563eb', bg: 'bg-blue-50 text-blue-800', f: p => typeof p.sigMtd === 'number' ? p.sigMtd : 0, kpi: teamKpis.signups, rrKey: 'sigs' },
+        { k: 'users', t: 'USERS', p: '', ic: 'user', c: '#a855f7', bg: 'bg-purple-50 text-purple-900', f: p => typeof p.cpaMtd === 'number' ? p.cpaMtd : 0, kpi: teamKpis.users, rrKey: 'users' },
+        { k: 'rev', t: 'REVENUE', p: '$', ic: 'dollar-sign', c: '#00d285', bg: 'bg-emerald-50 text-emerald-800', f: p => p.rev || 0, kpi: teamKpis.revenue, rrKey: 'rev' },
+        { k: 'profit', t: 'PROFIT', p: '$', ic: 'sack-dollar', c: '#14b8a6', bg: 'bg-teal-50 text-teal-800', f: p => p.profit || 0, kpi: teamKpis.profit, rrKey: 'profit' }
+      ];
+      const grid = document.getElementById('metrics-grid'); grid.innerHTML = '';
+      cats.forEach(cat => {
+        const items = partners.map(p => ({ name: p.name, val: cat.f(p) })).filter(i => cat.k === 'profit' ? i.val !== 0 : i.val > 0).sort((a,b) => b.val - a.val);
+        const max = Math.max(...items.map(i => Math.abs(i.val)), 1);
+        const total = items.reduce((a,i) => a + i.val, 0);
+
+        const catRrVal = (rr && typeof rr[cat.rrKey] === 'number') ? rr[cat.rrKey] : Math.round(total * currentRrFactor);
+        const rrColor = getRrColor(catRrVal, cat.kpi);
+        const rrDisplay = (cat.p === '$' ? (catRrVal < 0 ? '-$' : '$') : '') + Math.round(Math.abs(catRrVal)).toLocaleString();
+
+        const col = document.createElement('div'); col.className = 'flex flex-col gap-2.5 min-w-0';
+        col.innerHTML = `
+          <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between h-[115px]">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-extrabold uppercase text-slate-500">${cat.t}</span>
+              </div>
+              <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style="background:${cat.c}20; color:${cat.c}"><i class="fa-solid fa-${cat.ic}"></i></div>
+            </div>
+            <div class="my-0.5 flex items-baseline gap-1"><span class="text-xl font-black text-slate-900">${cat.p === '$' ? (total < 0 ? '-$' : '$') : ''}${Math.round(Math.abs(total)).toLocaleString()}</span><span class="text-[9px] font-bold text-slate-400">TOTAL</span></div>
+            <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 border-t border-slate-100 pt-1">
+              <span>KPI: <span class="text-slate-600 font-extrabold">${cat.p}${Math.round(cat.kpi).toLocaleString()}</span></span>
+              <span>RR: <span class="${rrColor} font-black">${rrDisplay}</span></span>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200 flex flex-col h-[320px]">
+            <div class="${cat.bg} text-[10px] font-extrabold p-1.5 rounded-lg mb-3 text-center uppercase">${cat.t}</div>
+            <div class="overflow-y-auto flex-1 pr-1 space-y-3.5">
+              ${items.map(i => {
+                const isNeg = i.val < 0, pct = Math.max(Math.round((Math.abs(i.val) / max) * 100), 2);
+                return `<div>
+                  <div class="flex justify-between text-xs mb-1 font-bold">
+                    <span class="font-extrabold text-slate-800">${i.name}</span>
+                    <span class="font-black ${isNeg ? 'text-red-600' : 'text-slate-900'}">${cat.p === '$' ? (isNeg ? '-$' : '$') : ''}${Math.round(Math.abs(i.val)).toLocaleString()}</span>
+                  </div>
+                  <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden"><div class="h-2 rounded-full" style="width:${pct}%; background-color:${isNeg ? '#ef4444' : cat.c}"></div></div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        grid.appendChild(col);
+      });
+    }
+
+    function renderLineChart(slice, prefix, kpis = { cpl: 4000, sigs: 1000, users: 250 }, totalDays = 30) {
+      const canvas = document.getElementById('mainLineChart'); if (!canvas) return;
+      Chart.getChart(canvas)?.destroy();
+      const labels = slice.map(r => r.label || `${prefix} ${parseInt(r.date.split('-')[2])}`);
+      const dailyLeadsKpi = (kpis.cpl / totalDays).toFixed(1);
+      const dailySigsKpi = (kpis.sigs / totalDays).toFixed(1);
+      const dailyUsersKpi = (kpis.users / totalDays).toFixed(1);
+
+      new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'LEADS', data: slice.map(r => r.leads || 0), borderColor: '#00d285', backgroundColor: '#00d285', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: 'SIGNUPS', data: slice.map(r => r.signups || 0), borderColor: '#2563eb', backgroundColor: '#2563eb', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: 'USERS', data: slice.map(r => r.users || 0), borderColor: '#a855f7', backgroundColor: '#a855f7', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: `KPI LEADS (${dailyLeadsKpi}/d)`, data: Array(slice.length).fill(dailyLeadsKpi), borderColor: '#00d285', borderDash: [6, 4], pointRadius: 0, fill: false },
+            { label: `KPI SIGNUPS (${dailySigsKpi}/d)`, data: Array(slice.length).fill(dailySigsKpi), borderColor: '#2563eb', borderDash: [6, 4], pointRadius: 0, fill: false },
+            { label: `KPI USERS (${dailyUsersKpi}/d)`, data: Array(slice.length).fill(dailyUsersKpi), borderColor: '#a855f7', borderDash: [6, 4], pointRadius: 0, fill: false }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { weight: 'bold', size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+      });
+    }
+
     function renderBreakdownTables(partners, rrFactor = 1, totKpis = {}, teamKpis = {}) {
       const container = document.getElementById('breakdown-tables-container');
       const kBudget = teamKpis.budget || 5500;
@@ -1270,7 +1516,7 @@
         if (type === 'CPA') { 
           const uRr = list.reduce((a,p) => a + (p._cpaRr || 0), 0);
           const s2p = s > 0 ? ((u / s) * 100).toFixed(1) + '%' : '0.0%'; 
-          const aKpi = totKpis.cpa?.kpi || 300;
+          const aKpi = totKpis.cpa?.kpi || 250;
           return `<tr>
             <td class="p-2 font-black">Grand total</td>
             <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
@@ -1352,7 +1598,50 @@
       updateCplSortIcons();
     }
 
-    // REGISTRO DE EVENTOS
+    function renderInactive(list) {
+      document.getElementById('inactivePartnersBody').innerHTML = (list || []).map(n => `<tr class="hover:bg-slate-50"><td class="py-1.5 px-3">${n}</td></tr>`).join('');
+    }
+
+    function renderZeroState(sDate, eDate) {
+      document.getElementById('tp-header-period').textContent = 'MTD - NO DATA';
+      ['budget','signups','users','revenue','profit'].forEach(k => {
+        document.getElementById(`tp-mtd-${k}`).textContent = k === 'budget'||k==='revenue'||k==='profit' ? '$0' : '0';
+        document.getElementById(`tp-rr-${k}`).textContent = k === 'budget'||k==='revenue'||k==='profit' ? '$0' : '0';
+      });
+      document.getElementById('tp-rr-roi').textContent = '—';
+      document.getElementById('breakdown-tables-container').innerHTML = '';
+      renderBrandsSummary([]);
+      renderPublisherBreakdown([]);
+    }
+
+    async function loadAllJSONs() {
+      try {
+        today = getSystemToday();
+        fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        if (fromDate < MIN_SYSTEM_DATE) fromDate = new Date(MIN_SYSTEM_DATE);
+
+        toDate = new Date(today);
+        fromViewYear = toViewYear = today.getFullYear();
+        fromViewMonth = toViewMonth = today.getMonth();
+        updateDatesUI();
+
+        const currentYear = today.getFullYear();
+        const currentMonthName = MONTHS[today.getMonth()].toLowerCase();
+
+        const baseMonths = Array.from(new Set([
+          currentMonthName,
+          MONTHS[Math.max(0, today.getMonth() - 1)].toLowerCase(),
+          MONTHS[Math.max(0, today.getMonth() - 2)].toLowerCase()
+        ]));
+        
+        await Promise.all(baseMonths.map(m => getMonthData(currentYear, m)));
+
+        dispatchRange(fromDate, toDate);
+      } catch (err) {
+        console.error("Error al iniciar:", err);
+      }
+    }
+
     document.addEventListener('click', e => {
       if (!e.target.closest('#fromPop') && !e.target.closest('#fromBtn')) document.getElementById('fromPop').classList.add('hidden');
       if (!e.target.closest('#toPop') && !e.target.closest('#toBtn')) document.getElementById('toPop').classList.add('hidden');
