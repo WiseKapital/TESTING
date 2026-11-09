@@ -113,12 +113,18 @@
 
       <!-- BRANDS SUMMARY REPORT -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <!-- BARRA SUPERIOR CON BOTÓN SHOW ALL / COLLAPSE ALL -->
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black uppercase text-slate-800 tracking-wide">BRANDS SUMMARY REPORT</span>
+          <button type="button" id="toggleAllBrandsBtn" onclick="toggleAllBrands()" class="flex items-center gap-1.5 px-3 py-1 bg-[#40513b] hover:bg-[#32402e] text-white border border-slate-900 rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer">
+            <i id="toggleAllBrandsIcon" class="fa-solid fa-chevron-down text-[10px]"></i>
+            <span id="toggleAllBrandsText">Show All</span>
+          </button>
+        </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-xs table-grid">
             <thead>
-              <tr class="font-black text-center select-none text-slate-800 bg-slate-100">
-                <th colspan="8" class="p-2 uppercase tracking-wide text-xs">BRANDS SUMMARY REPORT</th>
-              </tr>
               <tr class="sort-row-borderless select-none">
                 <th></th>
                 <th></th>
@@ -175,6 +181,7 @@
 
   <script>
     let currentRrFactor = 1;
+    let allBrandsExpanded = false;
     const DATA_CACHE = {};
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
@@ -423,7 +430,6 @@
       const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
       
       const lastDayOfMonth = fmtYMD(new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0));
-      // Es mes completo únicamente si inicia en el día 1 y coincide con el final de datos o el último día del mes
       const isFull = Boolean(data.date_range && sYMD === data.date_range.start && (eYMD === data.date_range.end || eYMD === lastDayOfMonth));
       
       let slice = (data.daily_series || []).filter(r => r.date && r.date >= sYMD && r.date <= eYMD);
@@ -598,7 +604,7 @@
 
       renderKPIs({ budget, sigs, users, rev, profit, rr, teamKpis });
 
-      // CONSOLIDACIÓN CON PRORRATEO PRECISO MES POR MES
+      // PRORRATEO MES POR MES
       const pMap = {};
       const bMap = {};
 
@@ -738,7 +744,58 @@
       renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
     }
 
-    // TOGGLE MEDIA PARTNERS
+    // BOTÓN SHOW ALL / COLLAPSE ALL
+    function toggleAllBrands() {
+      allBrandsExpanded = !allBrandsExpanded;
+      const detailRows = document.querySelectorAll('#brandsSummaryBody tr.brand-detail-row');
+      const icons = document.querySelectorAll('#brandsSummaryBody [id^="icon-brand-detail-"]');
+      const btnText = document.getElementById('toggleAllBrandsText');
+      const btnIcon = document.getElementById('toggleAllBrandsIcon');
+
+      detailRows.forEach(row => {
+        if (allBrandsExpanded) {
+          row.classList.remove('hidden');
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+
+      icons.forEach(ic => {
+        if (allBrandsExpanded) {
+          ic.classList.remove('fa-plus');
+          ic.classList.add('fa-minus');
+        } else {
+          ic.classList.remove('fa-minus');
+          ic.classList.add('fa-plus');
+        }
+      });
+
+      if (btnText) {
+        btnText.textContent = allBrandsExpanded ? 'Collapse All' : 'Show All';
+      }
+      if (btnIcon) {
+        btnIcon.className = allBrandsExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
+      }
+    }
+
+    function updateGlobalToggleState() {
+      const detailRows = document.querySelectorAll('#brandsSummaryBody tr.brand-detail-row');
+      if (detailRows.length === 0) return;
+      const visibleRows = document.querySelectorAll('#brandsSummaryBody tr.brand-detail-row:not(.hidden)');
+      
+      allBrandsExpanded = (visibleRows.length === detailRows.length);
+      const btnText = document.getElementById('toggleAllBrandsText');
+      const btnIcon = document.getElementById('toggleAllBrandsIcon');
+      
+      if (btnText) {
+        btnText.textContent = allBrandsExpanded ? 'Collapse All' : 'Show All';
+      }
+      if (btnIcon) {
+        btnIcon.className = allBrandsExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
+      }
+    }
+
+    // TOGGLE MEDIA PARTNERS INDIVIDUAL
     function toggleBrandDetail(detailId, e) {
       e?.stopPropagation();
       const row = document.getElementById(detailId);
@@ -759,6 +816,7 @@
           icon.classList.add('fa-plus');
         }
       }
+      updateGlobalToggleState();
     }
 
     function sortBrandsTable(key) {
@@ -856,6 +914,9 @@
           badgesHtml = `<span class="text-[11px] font-semibold text-slate-400 italic">No media partners reported</span>`;
         }
 
+        const hiddenClass = allBrandsExpanded ? '' : 'hidden';
+        const iconClass = allBrandsExpanded ? 'fa-minus' : 'fa-plus';
+
         return `
         <tr class="hover:bg-slate-50 transition-colors brand-row" 
             data-signups="${s}" 
@@ -870,7 +931,7 @@
             <div class="flex items-center justify-between gap-1.5">
               <span>${item.brand || '—'}</span>
               <button type="button" onclick="toggleBrandDetail('${detailId}', event)" class="w-4 h-4 shrink-0 rounded flex items-center justify-center bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-700 transition-colors text-[9px] font-black cursor-pointer shadow-2xs" title="Ver Media Partners">
-                <i id="icon-${detailId}" class="fa-solid fa-plus"></i>
+                <i id="icon-${detailId}" class="fa-solid ${iconClass}"></i>
               </button>
             </div>
           </td>
@@ -881,7 +942,7 @@
           <td class="p-2 text-center font-extrabold ${profitColor}">${profitDisplay}</td>
           <td class="p-2 text-center font-black text-purple-700">${s2p}</td>
         </tr>
-        <tr id="${detailId}" class="hidden bg-slate-50/90 border-y border-slate-200 brand-detail-row">
+        <tr id="${detailId}" class="${hiddenClass} bg-slate-50/90 border-y border-slate-200 brand-detail-row">
           <td colspan="8" class="py-2.5 px-4 text-left">
             <div class="flex flex-wrap items-center gap-2 text-xs">
               <span class="text-[10px] font-black text-slate-500 uppercase tracking-wide flex items-center gap-1.5 shrink-0">
