@@ -109,17 +109,24 @@
 
     <!-- SECCIÓN 2: 3 TABLAS DE DESGLOSE Y BRANDS SUMMARY -->
     <div id="section-v2" class="space-y-6">
+      <!-- BARRA DE CONTROL PARA EXPANDIR / COLAPSAR TODOS LOS PARTNERS -->
+      <div class="flex items-center justify-between bg-white p-3.5 px-4 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+          <span class="text-xs font-black uppercase text-slate-800 tracking-wide">Media Partners Performance Breakdown</span>
+        </div>
+        <button type="button" id="toggleAllPartnersBtn" onclick="toggleAllPartners()" class="flex items-center gap-1.5 px-3 py-1 bg-[#40513b] hover:bg-[#32402e] text-white border border-slate-900 rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer">
+          <i id="toggleAllPartnersIcon" class="fa-solid fa-chevron-down text-[10px]"></i>
+          <span id="toggleAllPartnersText">Show All</span>
+        </button>
+      </div>
+
       <div id="breakdown-tables-container" class="space-y-6"></div>
 
       <!-- BRANDS SUMMARY REPORT -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
-        <!-- BARRA SUPERIOR CON BOTÓN JUSTO AL LADO DEL TEXTO -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center justify-between pb-1">
           <span class="text-xs font-black uppercase text-slate-800 tracking-wide">BRANDS SUMMARY REPORT</span>
-          <button type="button" id="toggleAllBrandsBtn" onclick="toggleAllBrands()" class="flex items-center gap-1.5 px-3 py-1 bg-[#40513b] hover:bg-[#32402e] text-white border border-slate-900 rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer">
-            <i id="toggleAllBrandsIcon" class="fa-solid fa-chevron-down text-[10px]"></i>
-            <span id="toggleAllBrandsText">Show All</span>
-          </button>
         </div>
 
         <div class="overflow-x-auto">
@@ -181,7 +188,7 @@
 
   <script>
     let currentRrFactor = 1;
-    let allBrandsExpanded = false;
+    let allPartnersExpanded = false;
     const DATA_CACHE = {};
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
@@ -424,6 +431,41 @@
       renderMultiMonth(sDate, eDate);
     }
 
+    // EXTRAER ANUNCIANTES Y MARCAS DE UN MEDIA PARTNER
+    function getPartnerAdvertisers(partnerName, brandsList) {
+      if (!partnerName || !brandsList || !Array.isArray(brandsList)) return [];
+      const results = [];
+      const pUpper = partnerName.trim().toUpperCase();
+
+      brandsList.forEach(b => {
+        const mpRaw = b.media_partners;
+        if (!mpRaw || mpRaw === '-' || typeof mpRaw !== 'string') return;
+        
+        const segments = mpRaw.split('|').map(s => s.trim()).filter(Boolean);
+        segments.forEach(seg => {
+          const match = seg.match(/^([A-Za-z0-9_-]+)\s*\((.*?)\)$/);
+          if (match) {
+            const pName = match[1].trim();
+            const details = match[2].trim();
+            if (pName.toUpperCase() === pUpper) {
+              results.push({
+                advertiser: b.advertiser || '—',
+                brand: b.brand || '—',
+                details: details
+              });
+            }
+          } else if (seg.toUpperCase().startsWith(pUpper + ' ')) {
+            results.push({
+              advertiser: b.advertiser || '—',
+              brand: b.brand || '—',
+              details: seg.replace(new RegExp('^' + partnerName + '\\s*', 'i'), '').replace(/^\(|\)$/g, '').trim()
+            });
+          }
+        });
+      });
+      return results;
+    }
+
     function renderPeriod(data, sDate, eDate, prefix) {
       if (!data) return renderZeroState(sDate, eDate);
       document.getElementById('tp-header-period').textContent = `MTD - ${prefix.toUpperCase()} ${sDate.getFullYear()}`;
@@ -509,7 +551,7 @@
 
       renderTopCards(partners, teamKpis, rr);
       renderLineChart(slice, prefix, { cpl: totKpis.cpl?.kpi || 4000, sigs: totKpis.signups?.kpi || 1000, users: totKpis.cpa?.kpi || 300 }, totalMonthDays);
-      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
+      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis, data.advertisers_brands || []);
 
       const brandRatios = isFull ? { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 } : { sRatio, uRatio, bRatio, rRatio };
       renderBrandsSummary(data.advertisers_brands || [], brandRatios);
@@ -649,7 +691,6 @@
           cRatio = totCpr > 0 ? (mCpr / totCpr) : 0;
         }
 
-        // 1. Agregar Partners escalados
         (data.partners || []).forEach(p => {
           if (!pMap[p.name]) {
             pMap[p.name] = { 
@@ -678,7 +719,6 @@
           pMap[p.name].cprMtd += pC;
         });
 
-        // 2. Agregar Brands escaladas
         (data.advertisers_brands || []).forEach(b => {
           const key = `${b.advertiser || ''}___${b.brand || ''}`;
           if (!bMap[key]) {
@@ -728,10 +768,6 @@
 
       applyEqualKpis(partners, totKpis);
 
-      renderTopCards(partners, teamKpis, rr);
-      renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
-      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
-
       const multiBrands = Object.values(bMap).map(b => ({
         ...b,
         revenue: Number(b.revenue.toFixed(2)),
@@ -739,69 +775,65 @@
         profit: Number((b.revenue - b.budget).toFixed(2)),
         media_partners: b.media_partners.length > 0 ? Array.from(new Set(b.media_partners.join(' | ').split(' | '))).join(' | ') : '-'
       }));
+
+      renderTopCards(partners, teamKpis, rr);
+      renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
+      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis, multiBrands);
       renderBrandsSummary(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
 
       renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
     }
 
-    // BOTÓN SHOW ALL / COLLAPSE ALL
-    function toggleAllBrands() {
-      allBrandsExpanded = !allBrandsExpanded;
-      const detailRows = document.querySelectorAll('#brandsSummaryBody tr.brand-detail-row');
-      const icons = document.querySelectorAll('#brandsSummaryBody [id^="icon-brand-detail-"]');
-      const btnText = document.getElementById('toggleAllBrandsText');
-      const btnIcon = document.getElementById('toggleAllBrandsIcon');
+    // BOTÓN SHOW ALL / COLLAPSE ALL PARA MEDIA PARTNERS
+    function toggleAllPartners() {
+      allPartnersExpanded = !allPartnersExpanded;
+      const detailRows = document.querySelectorAll('tr.partner-detail-row');
+      const icons = document.querySelectorAll('[id^="icon-partner-detail-"]');
+      const btnText = document.getElementById('toggleAllPartnersText');
+      const btnIcon = document.getElementById('toggleAllPartnersIcon');
 
       detailRows.forEach(row => {
-        if (allBrandsExpanded) {
-          row.classList.remove('hidden');
-        } else {
-          row.classList.add('hidden');
-        }
+        if (allPartnersExpanded) row.classList.remove('hidden');
+        else row.classList.add('hidden');
       });
 
       icons.forEach(ic => {
-        if (allBrandsExpanded) {
-          ic.classList.remove('fa-plus');
-          ic.classList.add('fa-minus');
-        } else {
-          ic.classList.remove('fa-minus');
-          ic.classList.add('fa-plus');
+        const btn = ic.closest('button');
+        if (btn && !btn.disabled) {
+          if (allPartnersExpanded) {
+            ic.classList.remove('fa-plus');
+            ic.classList.add('fa-minus');
+          } else {
+            ic.classList.remove('fa-minus');
+            ic.classList.add('fa-plus');
+          }
         }
       });
 
-      if (btnText) {
-        btnText.textContent = allBrandsExpanded ? 'Collapse All' : 'Show All';
-      }
-      if (btnIcon) {
-        btnIcon.className = allBrandsExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
-      }
+      if (btnText) btnText.textContent = allPartnersExpanded ? 'Collapse All' : 'Show All';
+      if (btnIcon) btnIcon.className = allPartnersExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
     }
 
-    function updateGlobalToggleState() {
-      const detailRows = document.querySelectorAll('#brandsSummaryBody tr.brand-detail-row');
+    function updateGlobalPartnerToggleState() {
+      const detailRows = document.querySelectorAll('tr.partner-detail-row');
       if (detailRows.length === 0) return;
-      const visibleRows = document.querySelectorAll('#brandsSummaryBody tr.brand-detail-row:not(.hidden)');
-      
-      allBrandsExpanded = (visibleRows.length === detailRows.length);
-      const btnText = document.getElementById('toggleAllBrandsText');
-      const btnIcon = document.getElementById('toggleAllBrandsIcon');
-      
-      if (btnText) {
-        btnText.textContent = allBrandsExpanded ? 'Collapse All' : 'Show All';
-      }
-      if (btnIcon) {
-        btnIcon.className = allBrandsExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
-      }
+      const visibleRows = document.querySelectorAll('tr.partner-detail-row:not(.hidden)');
+
+      allPartnersExpanded = (visibleRows.length === detailRows.length);
+      const btnText = document.getElementById('toggleAllPartnersText');
+      const btnIcon = document.getElementById('toggleAllPartnersIcon');
+
+      if (btnText) btnText.textContent = allPartnersExpanded ? 'Collapse All' : 'Show All';
+      if (btnIcon) btnIcon.className = allPartnersExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
     }
 
-    // TOGGLE MEDIA PARTNERS INDIVIDUAL
-    function toggleBrandDetail(detailId, e) {
+    // TOGGLE MEDIA PARTNER INDIVIDUAL
+    function togglePartnerDetail(detailId, e) {
       e?.stopPropagation();
       const row = document.getElementById(detailId);
       const icon = document.getElementById('icon-' + detailId);
       if (!row) return;
-      
+
       const isHidden = row.classList.contains('hidden');
       if (isHidden) {
         row.classList.remove('hidden');
@@ -816,9 +848,398 @@
           icon.classList.add('fa-plus');
         }
       }
-      updateGlobalToggleState();
+      updateGlobalPartnerToggleState();
     }
 
+    // ORDENAMIENTOS
+    function sortCpaTable(key) {
+      if (cpaSortKey === key) cpaSortDir = (cpaSortDir === 'desc') ? 'asc' : 'desc';
+      else { cpaSortKey = key; cpaSortDir = 'desc'; }
+
+      const tbody = document.getElementById('cpaTableBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.cpa-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return cpaSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => {
+        tbody.appendChild(r);
+        if (r.dataset.detailId) {
+          const dRow = document.getElementById(r.dataset.detailId);
+          if (dRow) tbody.appendChild(dRow);
+        }
+      });
+      updateCpaSortIcons();
+    }
+
+    function updateCpaSortIcons() {
+      const keys = ['budget', 'registrations', 'cpa', 'revenue', 'status'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-cpa-${k}`);
+        if (!btn) return;
+        if (cpaSortKey === k) {
+          const icon = cpaSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    function sortCprTable(key) {
+      if (cprSortKey === key) cprSortDir = (cprSortDir === 'desc') ? 'asc' : 'desc';
+      else { cprSortKey = key; cprSortDir = 'desc'; }
+
+      const tbody = document.getElementById('cprTableBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.cpr-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return cprSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => {
+        tbody.appendChild(r);
+        if (r.dataset.detailId) {
+          const dRow = document.getElementById(r.dataset.detailId);
+          if (dRow) tbody.appendChild(dRow);
+        }
+      });
+      updateCprSortIcons();
+    }
+
+    function updateCprSortIcons() {
+      const keys = ['budget', 'cpr', 'registrations', 'users', 'revenue', 'status'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-cpr-${k}`);
+        if (!btn) return;
+        if (cprSortKey === k) {
+          const icon = cprSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    function sortCplTable(key) {
+      if (cplSortKey === key) cplSortDir = (cplSortDir === 'desc') ? 'asc' : 'desc';
+      else { cplSortKey = key; cplSortDir = 'desc'; }
+
+      const tbody = document.getElementById('cplTableBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.cpl-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return cplSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => {
+        tbody.appendChild(r);
+        if (r.dataset.detailId) {
+          const dRow = document.getElementById(r.dataset.detailId);
+          if (dRow) tbody.appendChild(dRow);
+        }
+      });
+      updateCplSortIcons();
+    }
+
+    function updateCplSortIcons() {
+      const keys = ['budget', 'leads', 'registrations', 'users', 'revenue', 'status'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-cpl-${k}`);
+        if (!btn) return;
+        if (cplSortKey === k) {
+          const icon = cplSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    // TABLAS DE DESGLOSE CON ANUNCIANTES / MARCAS EN EL '+'
+    function renderBreakdownTables(partners, rrFactor = 1, totKpis = {}, teamKpis = {}, brandsList = []) {
+      const container = document.getElementById('breakdown-tables-container');
+      const kBudget = teamKpis.budget || 5500;
+      
+      const cpa = partners.filter(isCpaPartner).sort((a,b) => {
+        const uA = typeof a.cpaMtd === 'number' ? a.cpaMtd : 0;
+        const uB = typeof b.cpaMtd === 'number' ? b.cpaMtd : 0;
+        if (uB !== uA) return uB - uA;
+        const sA = typeof a.sigMtd === 'number' ? a.sigMtd : 0;
+        const sB = typeof b.sigMtd === 'number' ? b.sigMtd : 0;
+        return sB - sA;
+      });
+
+      const cpr = partners.filter(isCprPartner).sort((a,b) => (b.cprMtd || 0) - (a.cprMtd || 0));
+      const cpl = partners.filter(isCplPartner).sort((a,b) => (b.cplMtd || 0) - (a.cplMtd || 0));
+
+      const totalRows = cpa.length + cpr.length + cpl.length;
+      const allBudgetKpis = totalRows > 0 ? distributeEqual(kBudget, totalRows) : [];
+
+      let kpiIdx = 0;
+      cpa.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
+      cpr.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
+      cpl.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
+
+      [...cpa, ...cpr, ...cpl].forEach(p => {
+        const b = p.budget || 0;
+        p._budgetRr = (typeof p.budgetRr === 'number') ? p.budgetRr : Math.round(b * rrFactor);
+        
+        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
+        p._sigRr = (typeof p.sigRr === 'number') ? p.sigRr : Math.round(sigVal * rrFactor);
+
+        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
+        p._cpaRr = (typeof p.cpaRr === 'number') ? p.cpaRr : Math.round(usersVal * rrFactor);
+
+        const cprVal = typeof p.cprMtd === 'number' ? p.cprMtd : 0;
+        p._cprRr = (typeof p.cprRr === 'number') ? p.cprRr : Math.round(cprVal * rrFactor);
+
+        const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
+        p._cplRr = (typeof p.cplRr === 'number') ? p.cplRr : (typeof p.cplMtd === 'number' ? Math.round(p.cplMtd * rrFactor) : '—');
+      });
+
+      const cpaTotBKpi = cpa.reduce((a, p) => a + (p._bKpi || 0), 0);
+      const cprTotBKpi = cpr.reduce((a, p) => a + (p._bKpi || 0), 0);
+      const cplTotBKpi = cpl.reduce((a, p) => a + (p._bKpi || 0), 0);
+
+      const renderRows = (list, type) => list.map((p, idx) => {
+        const b = p.budget || 0, bRr = p._budgetRr, r = p.rev || 0;
+        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
+        const bKpi = p._bKpi || 0;
+        const bKpiDisplay = `$${bKpi.toLocaleString()}`;
+        const badge = getStatusBadge(p.status);
+        const revDisplay = `$${Math.round(r).toLocaleString()}`;
+        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
+        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
+
+        const detailId = `partner-detail-${type.toLowerCase()}-${idx}`;
+        const advertisers = getPartnerAdvertisers(p.name, brandsList);
+        const hasAdv = advertisers.length > 0;
+
+        let advBadgesHtml = '';
+        if (hasAdv) {
+          advBadgesHtml = advertisers.map(adv => `
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-800 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span class="font-extrabold text-slate-900">${adv.advertiser}</span>
+              <span class="text-slate-400">›</span>
+              <span class="text-blue-700 font-semibold">${adv.brand}</span>
+              ${adv.details ? `<span class="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-semibold">(${adv.details})</span>` : ''}
+            </span>
+          `).join('');
+        } else {
+          advBadgesHtml = `<span class="text-[11px] font-semibold text-slate-400 italic">No direct brands reported for this partner</span>`;
+        }
+
+        const hiddenClass = allPartnersExpanded ? '' : 'hidden';
+        const iconClass = (allPartnersExpanded && hasAdv) ? 'fa-minus' : 'fa-plus';
+
+        const partnerCell = `
+          <td class="p-2 font-bold">
+            <div class="flex items-center justify-between gap-1.5">
+              <span>${p.name}</span>
+              <button type="button" onclick="togglePartnerDetail('${detailId}', event)" class="w-4 h-4 shrink-0 rounded flex items-center justify-center ${hasAdv ? 'bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 cursor-pointer' : 'bg-slate-50 text-slate-300 cursor-not-allowed'} transition-colors text-[9px] font-black shadow-2xs" title="${hasAdv ? 'Ver Anunciantes / Marcas' : 'Sin anunciantes'}" ${hasAdv ? '' : 'disabled'}>
+                <i id="icon-${detailId}" class="fa-solid ${iconClass}"></i>
+              </button>
+            </div>
+          </td>`;
+
+        const detailRowHtml = `
+          <tr id="${detailId}" class="${hiddenClass} bg-slate-50/90 border-y border-slate-200 partner-detail-row">
+            <td colspan="12" class="py-2.5 px-4 text-left">
+              <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="text-[10px] font-black text-slate-500 uppercase tracking-wide flex items-center gap-1.5 shrink-0">
+                  <i class="fa-solid fa-bullhorn text-blue-600"></i> Advertisers / Brands:
+                </span>
+                ${advBadgesHtml}
+              </div>
+            </td>
+          </tr>`;
+
+        if (type === 'CPA') { 
+          const cpaVal = usersVal;
+          const cpaRrVal = p._cpaRr;
+          const s2p = sigVal > 0 ? ((cpaVal / sigVal) * 100).toFixed(1) + '%' : '0.0%';
+
+          return `
+          <tr class="hover:bg-slate-50 cpa-row" data-budget="${b}" data-registrations="${sigVal}" data-cpa="${cpaVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}" data-detail-id="${detailId}">
+            ${partnerCell}
+            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
+            <td class="text-center font-bold">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
+            <td class="text-center font-bold">${sigVal}</td>
+            <td class="text-center text-slate-500 font-bold">${p.cpaKpi || 25}</td>
+            <td class="text-center font-black">${cpaVal}</td>
+            <td class="text-center font-bold ${getRrColor(cpaRrVal, p.cpaKpi)}">${cpaRrVal}</td>
+            <td class="text-center font-bold text-purple-700">${s2p}</td>
+            <td class="text-center font-bold">${revDisplay}</td>
+            <td class="text-center font-bold">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
+          </tr>
+          ${detailRowHtml}`; 
+        }
+
+        if (type === 'CPR') {
+          const cprMtdVal = typeof p.cprMtd === 'number' ? Math.round(p.cprMtd) : 0;
+          const cprRrVal = p._cprRr;
+
+          return `
+          <tr class="hover:bg-slate-50 cpr-row" data-budget="${b}" data-cpr="${p.cprMtd||0}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}" data-detail-id="${detailId}">
+            ${partnerCell}
+            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
+            <td class="text-center font-bold">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
+            <td class="text-center text-slate-500 font-bold">${p.cprKpi||200}</td>
+            <td class="text-center font-black">${cprMtdVal}</td>
+            <td class="text-center font-bold ${getRrColor(cprRrVal, p.cprKpi)}">${cprRrVal}</td>
+            <td class="text-center font-bold">${sigVal}</td>
+            <td class="text-center font-bold">${usersVal}</td>
+            <td class="text-center font-bold">${revDisplay}</td>
+            <td class="text-center font-bold">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
+          </tr>
+          ${detailRowHtml}`;
+        }
+
+        if (type === 'CPL') {
+          const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
+          const cplRrVal = p._cplRr;
+
+          return `
+          <tr class="hover:bg-slate-50 cpl-row" data-budget="${b}" data-leads="${cplVal}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}" data-detail-id="${detailId}">
+            ${partnerCell}
+            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
+            <td class="text-center font-bold">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
+            <td class="text-center text-slate-500 font-bold">${p.cplKpi||'—'}</td>
+            <td class="text-center font-black">${cplVal}</td>
+            <td class="text-center font-black ${getRrColor(cplRrVal, p.cplKpi)}">${cplRrVal}</td>
+            <td class="text-center font-bold">${sigVal}</td>
+            <td class="text-center font-bold">${usersVal}</td>
+            <td class="text-center font-bold">${revDisplay}</td>
+            <td class="text-center font-bold">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
+          </tr>
+          ${detailRowHtml}`;
+        }
+      }).join('');
+
+      const renderFoot = (list, type, totBKpi) => {
+        const b = list.reduce((a,p) => a + (p.budget || 0), 0);
+        const bRr = list.reduce((a,p) => a + (p._budgetRr || 0), 0);
+        const r = list.reduce((a,p) => a + (p.rev || 0), 0);
+        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
+        const bKpiTotDisplay = totBKpi > 0 ? `$${totBKpi.toLocaleString()}` : '$0';
+        const revTotDisplay = `$${Math.round(r).toLocaleString()}`;
+
+        const s = list.reduce((a,p) => a + (typeof p.sigMtd === 'number' ? p.sigMtd : 0), 0);
+        const u = list.reduce((a,p) => a + (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0), 0);
+
+        if (type === 'CPA') { 
+          const uRr = list.reduce((a,p) => a + (p._cpaRr || 0), 0);
+          const s2p = s > 0 ? ((u / s) * 100).toFixed(1) + '%' : '0.0%'; 
+          const aKpi = totKpis.cpa?.kpi || 300;
+          return `<tr>
+            <td class="p-2 font-black">Grand total</td>
+            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
+            <td class="text-center font-black">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
+            <td class="text-center font-black">${s}</td>
+            <td class="text-center text-slate-700 font-black">${aKpi.toLocaleString()}</td>
+            <td class="text-center font-black">${u}</td>
+            <td class="text-center font-bold ${getRrColor(uRr, aKpi)}">${uRr}</td>
+            <td class="text-center font-black text-purple-700">${s2p}</td>
+            <td class="text-center font-black">${revTotDisplay}</td>
+            <td class="text-center font-black">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
+          </tr>`; 
+        }
+
+        if (type === 'CPR') { 
+          const c = Math.round(list.reduce((a,p) => a + (p.cprMtd || 0), 0));
+          const cRr = list.reduce((a,p) => a + (p._cprRr || 0), 0); 
+          const cKpi = totKpis.cpr?.kpi || 200;
+          return `<tr>
+            <td class="p-2 font-black">Grand total</td>
+            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
+            <td class="text-center font-black">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
+            <td class="text-center text-slate-700 font-black">${cKpi.toLocaleString()}</td>
+            <td class="text-center font-black">${c}</td>
+            <td class="text-center font-bold ${getRrColor(cRr, cKpi)}">${cRr}</td>
+            <td class="text-center font-black">${s}</td>
+            <td class="text-center font-black">${u}</td>
+            <td class="text-center font-black">${revTotDisplay}</td>
+            <td class="text-center font-black">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
+          </tr>`; 
+        }
+
+        if (type === 'CPL') { 
+          const l = list.reduce((a,p) => a + (typeof p.cplMtd === 'number' ? p.cplMtd : 0), 0);
+          const lRr = list.reduce((a,p) => a + (typeof p._cplRr === 'number' ? p._cplRr : 0), 0); 
+          const lKpi = totKpis.cpl?.kpi || 4000;
+          return `<tr>
+            <td class="p-2 font-black">Grand total</td>
+            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
+            <td class="text-center font-black">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
+            <td class="text-center text-slate-700 font-black">${lKpi.toLocaleString()}</td>
+            <td class="text-center font-black">${l}</td>
+            <td class="text-center font-black ${getRrColor(lRr, lKpi)}">${lRr}</td>
+            <td class="text-center font-black">${s}</td>
+            <td class="text-center font-black">${u}</td>
+            <td class="text-center font-black">${revTotDisplay}</td>
+            <td class="text-center font-black">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
+          </tr>`; 
+        }
+      };
+
+      container.innerHTML = `
+        <!-- 1. CPA -->
+        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+          <span class="text-xs font-black uppercase text-purple-900 bg-purple-100 px-3 py-1 rounded-md">CPA</span>
+          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('budget')" id="sort-cpa-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('registrations')" id="sort-cpa-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('cpa')" id="sort-cpa-cpa" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('revenue')" id="sort-cpa-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('status')" id="sort-cpa-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th rowspan="2" class="p-1.5 bg-slate-100 align-middle">Registrations</th><th colspan="3" class="p-1.5 bg-purple-100">CPA</th><th colspan="3" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>S2P</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cpaTableBody" class="font-semibold">${renderRows(cpa, 'CPA') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpa, 'CPA', cpaTotBKpi)}</tfoot></table></div>
+        </div>
+
+        <!-- 2. CPR -->
+        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+          <span class="text-xs font-black uppercase text-amber-900 bg-amber-100 px-3 py-1 rounded-md">CPR</span>
+          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCprTable('budget')" id="sort-cpr-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCprTable('cpr')" id="sort-cpr-cpr" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('registrations')" id="sort-cpr-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('users')" id="sort-cpr-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('revenue')" id="sort-cpr-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('status')" id="sort-cpr-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-amber-100">CPR</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cprTableBody" class="font-semibold">${renderRows(cpr, 'CPR') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No active CPR records</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${cpr.length ? renderFoot(cpr, 'CPR', cprTotBKpi) : ''}</tfoot></table></div>
+        </div>
+
+        <!-- 3. CPL -->
+        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+          <span class="text-xs font-black uppercase text-sky-900 bg-sky-100 px-3 py-1 rounded-md">CPL</span>
+          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCplTable('budget')" id="sort-cpl-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCplTable('leads')" id="sort-cpl-leads" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('registrations')" id="sort-cpl-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('users')" id="sort-cpl-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('revenue')" id="sort-cpl-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('status')" id="sort-cpl-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-fuchsia-100">Leads</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cplTableBody" class="font-semibold">${renderRows(cpl, 'CPL') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpl, 'CPL', cplTotBKpi)}</tfoot></table></div>
+        </div>`;
+      
+      updateCpaSortIcons();
+      updateCprSortIcons();
+      updateCplSortIcons();
+    }
+
+    // ORDENAMIENTO EN TABLA DE MARCAS
     function sortBrandsTable(key) {
       if (brandsSortKey === key) {
         brandsSortDir = (brandsSortDir === 'desc') ? 'asc' : 'desc';
@@ -838,13 +1259,7 @@
         return brandsSortDir === 'desc' ? vB - vA : vA - vB;
       });
 
-      rows.forEach(r => {
-        tbody.appendChild(r);
-        if (r.dataset.detailId) {
-          const detailRow = document.getElementById(r.dataset.detailId);
-          if (detailRow) tbody.appendChild(detailRow);
-        }
-      });
+      rows.forEach(r => tbody.appendChild(r));
       updateBrandsSortIcons();
     }
 
@@ -877,7 +1292,7 @@
 
       let totSignups = 0, totFtd = 0, totRev = 0, totBudget = 0;
 
-      const rowsHtml = brands.map((item, idx) => {
+      const rowsHtml = brands.map(item => {
         const s = Math.round((item.signups || 0) * (ratios.sRatio ?? 1));
         const f = Math.round((item.ftd || 0) * (ratios.uRatio ?? 1));
         const b = Math.round((item.budget || 0) * (ratios.bRatio ?? 1));
@@ -897,26 +1312,6 @@
         const profitDisplay = (p < 0 ? '-$' : '$') + Math.round(Math.abs(p)).toLocaleString();
         const profitColor = p < 0 ? 'text-red-custom' : (p > 0 ? 'text-green-custom' : 'text-slate-700');
 
-        const detailId = `brand-detail-${idx}`;
-        const mpRaw = item.media_partners || '-';
-        const hasPartners = mpRaw !== '-' && mpRaw.trim() !== '';
-
-        let badgesHtml = '';
-        if (hasPartners) {
-          const list = mpRaw.split('|').map(x => x.trim()).filter(Boolean);
-          badgesHtml = list.map(itemStr => `
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-800 shadow-2xs">
-              <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-              ${itemStr}
-            </span>
-          `).join('');
-        } else {
-          badgesHtml = `<span class="text-[11px] font-semibold text-slate-400 italic">No media partners reported</span>`;
-        }
-
-        const hiddenClass = allBrandsExpanded ? '' : 'hidden';
-        const iconClass = allBrandsExpanded ? 'fa-minus' : 'fa-plus';
-
         return `
         <tr class="hover:bg-slate-50 transition-colors brand-row" 
             data-signups="${s}" 
@@ -924,33 +1319,15 @@
             data-revenue="${r}" 
             data-budget="${b}" 
             data-profit="${p}" 
-            data-s2p="${rawS2p}"
-            data-detail-id="${detailId}">
+            data-s2p="${rawS2p}">
           <td class="p-2 font-bold text-left text-slate-900">${item.advertiser || '—'}</td>
-          <td class="p-2 font-semibold text-left text-slate-700">
-            <div class="flex items-center justify-between gap-1.5">
-              <span>${item.brand || '—'}</span>
-              <button type="button" onclick="toggleBrandDetail('${detailId}', event)" class="w-4 h-4 shrink-0 rounded flex items-center justify-center bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-700 transition-colors text-[9px] font-black cursor-pointer shadow-2xs" title="Ver Media Partners">
-                <i id="icon-${detailId}" class="fa-solid ${iconClass}"></i>
-              </button>
-            </div>
-          </td>
+          <td class="p-2 font-semibold text-left text-slate-700">${item.brand || '—'}</td>
           <td class="p-2 text-center font-bold text-slate-800">${s.toLocaleString()}</td>
           <td class="p-2 text-center font-black text-slate-900">${f.toLocaleString()}</td>
           <td class="p-2 text-center font-bold text-slate-800">${revDisplay}</td>
           <td class="p-2 text-center font-bold text-slate-800">${bDisplay}</td>
           <td class="p-2 text-center font-extrabold ${profitColor}">${profitDisplay}</td>
           <td class="p-2 text-center font-black text-purple-700">${s2p}</td>
-        </tr>
-        <tr id="${detailId}" class="${hiddenClass} bg-slate-50/90 border-y border-slate-200 brand-detail-row">
-          <td colspan="8" class="py-2.5 px-4 text-left">
-            <div class="flex flex-wrap items-center gap-2 text-xs">
-              <span class="text-[10px] font-black text-slate-500 uppercase tracking-wide flex items-center gap-1.5 shrink-0">
-                <i class="fa-solid fa-network-wired text-blue-500"></i> Media Partners:
-              </span>
-              ${badgesHtml}
-            </div>
-          </td>
         </tr>`;
       }).join('');
 
@@ -963,13 +1340,7 @@
           const vB = parseFloat(b.dataset[brandsSortKey]) || 0;
           return brandsSortDir === 'desc' ? vB - vA : vA - vB;
         });
-        rows.forEach(r => {
-          tbody.appendChild(r);
-          if (r.dataset.detailId) {
-            const detailRow = document.getElementById(r.dataset.detailId);
-            if (detailRow) tbody.appendChild(detailRow);
-          }
-        });
+        rows.forEach(r => tbody.appendChild(r));
       }
       updateBrandsSortIcons();
 
@@ -1134,328 +1505,6 @@
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { weight: 'bold', size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
       });
-    }
-
-    // ORDENAMIENTO CPA
-    function sortCpaTable(key) {
-      if (cpaSortKey === key) cpaSortDir = (cpaSortDir === 'desc') ? 'asc' : 'desc';
-      else { cpaSortKey = key; cpaSortDir = 'desc'; }
-
-      const tbody = document.getElementById('cpaTableBody');
-      if (!tbody) return;
-      const rows = Array.from(tbody.querySelectorAll('tr.cpa-row'));
-      if (rows.length === 0) return;
-
-      rows.sort((a, b) => {
-        const vA = parseFloat(a.dataset[key]) || 0;
-        const vB = parseFloat(b.dataset[key]) || 0;
-        return cpaSortDir === 'desc' ? vB - vA : vA - vB;
-      });
-
-      rows.forEach(r => tbody.appendChild(r));
-      updateCpaSortIcons();
-    }
-
-    function updateCpaSortIcons() {
-      const keys = ['budget', 'registrations', 'cpa', 'revenue', 'status'];
-      keys.forEach(k => {
-        const btn = document.getElementById(`sort-cpa-${k}`);
-        if (!btn) return;
-        if (cpaSortKey === k) {
-          const icon = cpaSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
-          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
-          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        } else {
-          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
-          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        }
-      });
-    }
-
-    // ORDENAMIENTO CPR
-    function sortCprTable(key) {
-      if (cprSortKey === key) cprSortDir = (cprSortDir === 'desc') ? 'asc' : 'desc';
-      else { cprSortKey = key; cprSortDir = 'desc'; }
-
-      const tbody = document.getElementById('cprTableBody');
-      if (!tbody) return;
-      const rows = Array.from(tbody.querySelectorAll('tr.cpr-row'));
-      if (rows.length === 0) return;
-
-      rows.sort((a, b) => {
-        const vA = parseFloat(a.dataset[key]) || 0;
-        const vB = parseFloat(b.dataset[key]) || 0;
-        return cprSortDir === 'desc' ? vB - vA : vA - vB;
-      });
-
-      rows.forEach(r => tbody.appendChild(r));
-      updateCprSortIcons();
-    }
-
-    function updateCprSortIcons() {
-      const keys = ['budget', 'cpr', 'registrations', 'users', 'revenue', 'status'];
-      keys.forEach(k => {
-        const btn = document.getElementById(`sort-cpr-${k}`);
-        if (!btn) return;
-        if (cprSortKey === k) {
-          const icon = cprSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
-          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
-          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        } else {
-          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
-          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        }
-      });
-    }
-
-    // ORDENAMIENTO CPL
-    function sortCplTable(key) {
-      if (cplSortKey === key) cplSortDir = (cplSortDir === 'desc') ? 'asc' : 'desc';
-      else { cplSortKey = key; cplSortDir = 'desc'; }
-
-      const tbody = document.getElementById('cplTableBody');
-      if (!tbody) return;
-      const rows = Array.from(tbody.querySelectorAll('tr.cpl-row'));
-      if (rows.length === 0) return;
-
-      rows.sort((a, b) => {
-        const vA = parseFloat(a.dataset[key]) || 0;
-        const vB = parseFloat(b.dataset[key]) || 0;
-        return cplSortDir === 'desc' ? vB - vA : vA - vB;
-      });
-
-      rows.forEach(r => tbody.appendChild(r));
-      updateCplSortIcons();
-    }
-
-    function updateCplSortIcons() {
-      const keys = ['budget', 'leads', 'registrations', 'users', 'revenue', 'status'];
-      keys.forEach(k => {
-        const btn = document.getElementById(`sort-cpl-${k}`);
-        if (!btn) return;
-        if (cplSortKey === k) {
-          const icon = cplSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
-          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
-          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        } else {
-          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
-          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
-        }
-      });
-    }
-
-    // TABLAS DE DESGLOSE CON RR Y TOTALES
-    function renderBreakdownTables(partners, rrFactor = 1, totKpis = {}, teamKpis = {}) {
-      const container = document.getElementById('breakdown-tables-container');
-      const kBudget = teamKpis.budget || 5500;
-      
-      const cpa = partners.filter(isCpaPartner).sort((a,b) => {
-        const uA = typeof a.cpaMtd === 'number' ? a.cpaMtd : 0;
-        const uB = typeof b.cpaMtd === 'number' ? b.cpaMtd : 0;
-        if (uB !== uA) return uB - uA;
-        const sA = typeof a.sigMtd === 'number' ? a.sigMtd : 0;
-        const sB = typeof b.sigMtd === 'number' ? b.sigMtd : 0;
-        return sB - sA;
-      });
-
-      const cpr = partners.filter(isCprPartner).sort((a,b) => (b.cprMtd || 0) - (a.cprMtd || 0));
-      const cpl = partners.filter(isCplPartner).sort((a,b) => (b.cplMtd || 0) - (a.cplMtd || 0));
-
-      const totalRows = cpa.length + cpr.length + cpl.length;
-      const allBudgetKpis = totalRows > 0 ? distributeEqual(kBudget, totalRows) : [];
-
-      let kpiIdx = 0;
-      cpa.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
-      cpr.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
-      cpl.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
-
-      [...cpa, ...cpr, ...cpl].forEach(p => {
-        const b = p.budget || 0;
-        p._budgetRr = (typeof p.budgetRr === 'number') ? p.budgetRr : Math.round(b * rrFactor);
-        
-        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
-        p._sigRr = (typeof p.sigRr === 'number') ? p.sigRr : Math.round(sigVal * rrFactor);
-
-        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
-        p._cpaRr = (typeof p.cpaRr === 'number') ? p.cpaRr : Math.round(usersVal * rrFactor);
-
-        const cprVal = typeof p.cprMtd === 'number' ? p.cprMtd : 0;
-        p._cprRr = (typeof p.cprRr === 'number') ? p.cprRr : Math.round(cprVal * rrFactor);
-
-        const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
-        p._cplRr = (typeof p.cplRr === 'number') ? p.cplRr : (typeof p.cplMtd === 'number' ? Math.round(p.cplMtd * rrFactor) : '—');
-      });
-
-      const cpaTotBKpi = cpa.reduce((a, p) => a + (p._bKpi || 0), 0);
-      const cprTotBKpi = cpr.reduce((a, p) => a + (p._bKpi || 0), 0);
-      const cplTotBKpi = cpl.reduce((a, p) => a + (p._bKpi || 0), 0);
-
-      const renderRows = (list, type) => list.map(p => {
-        const b = p.budget || 0, bRr = p._budgetRr, r = p.rev || 0;
-        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
-        const bKpi = p._bKpi || 0;
-        const bKpiDisplay = `$${bKpi.toLocaleString()}`;
-        const badge = getStatusBadge(p.status);
-        const revDisplay = `$${Math.round(r).toLocaleString()}`;
-        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
-        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
-
-        if (type === 'CPA') { 
-          const cpaVal = usersVal;
-          const cpaRrVal = p._cpaRr;
-          const s2p = sigVal > 0 ? ((cpaVal / sigVal) * 100).toFixed(1) + '%' : '0.0%';
-
-          return `<tr class="hover:bg-slate-50 cpa-row" data-budget="${b}" data-registrations="${sigVal}" data-cpa="${cpaVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
-            <td class="p-2 font-bold">${p.name}</td>
-            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
-            <td class="text-center font-bold">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
-            <td class="text-center font-bold">${sigVal}</td>
-            <td class="text-center text-slate-500 font-bold">${p.cpaKpi || 25}</td>
-            <td class="text-center font-black">${cpaVal}</td>
-            <td class="text-center font-bold ${getRrColor(cpaRrVal, p.cpaKpi)}">${cpaRrVal}</td>
-            <td class="text-center font-bold text-purple-700">${s2p}</td>
-            <td class="text-center font-bold">${revDisplay}</td>
-            <td class="text-center font-bold">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`; 
-        }
-
-        if (type === 'CPR') {
-          const cprMtdVal = typeof p.cprMtd === 'number' ? Math.round(p.cprMtd) : 0;
-          const cprRrVal = p._cprRr;
-
-          return `<tr class="hover:bg-slate-50 cpr-row" data-budget="${b}" data-cpr="${p.cprMtd||0}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
-            <td class="p-2 font-bold">${p.name}</td>
-            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
-            <td class="text-center font-bold">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
-            <td class="text-center text-slate-500 font-bold">${p.cprKpi||200}</td>
-            <td class="text-center font-black">${cprMtdVal}</td>
-            <td class="text-center font-bold ${getRrColor(cprRrVal, p.cprKpi)}">${cprRrVal}</td>
-            <td class="text-center font-bold">${sigVal}</td>
-            <td class="text-center font-bold">${usersVal}</td>
-            <td class="text-center font-bold">${revDisplay}</td>
-            <td class="text-center font-bold">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`;
-        }
-
-        if (type === 'CPL') {
-          const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
-          const cplRrVal = p._cplRr;
-
-          return `<tr class="hover:bg-slate-50 cpl-row" data-budget="${b}" data-leads="${cplVal}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
-            <td class="p-2 font-bold">${p.name}</td>
-            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
-            <td class="text-center font-bold">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
-            <td class="text-center text-slate-500 font-bold">${p.cplKpi||'—'}</td>
-            <td class="text-center font-black">${cplVal}</td>
-            <td class="text-center font-black ${getRrColor(cplRrVal, p.cplKpi)}">${cplRrVal}</td>
-            <td class="text-center font-bold">${sigVal}</td>
-            <td class="text-center font-bold">${usersVal}</td>
-            <td class="text-center font-bold">${revDisplay}</td>
-            <td class="text-center font-bold">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`;
-        }
-      }).join('');
-
-      const renderFoot = (list, type, totBKpi) => {
-        const b = list.reduce((a,p) => a + (p.budget || 0), 0);
-        const bRr = list.reduce((a,p) => a + (p._budgetRr || 0), 0);
-        const r = list.reduce((a,p) => a + (p.rev || 0), 0);
-        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
-        const bKpiTotDisplay = totBKpi > 0 ? `$${totBKpi.toLocaleString()}` : '$0';
-        const revTotDisplay = `$${Math.round(r).toLocaleString()}`;
-
-        const s = list.reduce((a,p) => a + (typeof p.sigMtd === 'number' ? p.sigMtd : 0), 0);
-        const u = list.reduce((a,p) => a + (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0), 0);
-
-        if (type === 'CPA') { 
-          const uRr = list.reduce((a,p) => a + (p._cpaRr || 0), 0);
-          const s2p = s > 0 ? ((u / s) * 100).toFixed(1) + '%' : '0.0%'; 
-          const aKpi = totKpis.cpa?.kpi || 300;
-          return `<tr>
-            <td class="p-2 font-black">Grand total</td>
-            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
-            <td class="text-center font-black">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
-            <td class="text-center font-black">${s}</td>
-            <td class="text-center text-slate-700 font-black">${aKpi.toLocaleString()}</td>
-            <td class="text-center font-black">${u}</td>
-            <td class="text-center font-bold ${getRrColor(uRr, aKpi)}">${uRr}</td>
-            <td class="text-center font-black text-purple-700">${s2p}</td>
-            <td class="text-center font-black">${revTotDisplay}</td>
-            <td class="text-center font-black">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
-          </tr>`; 
-        }
-
-        if (type === 'CPR') { 
-          const c = Math.round(list.reduce((a,p) => a + (p.cprMtd || 0), 0));
-          const cRr = list.reduce((a,p) => a + (p._cprRr || 0), 0); 
-          const cKpi = totKpis.cpr?.kpi || 200;
-          return `<tr>
-            <td class="p-2 font-black">Grand total</td>
-            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
-            <td class="text-center font-black">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
-            <td class="text-center text-slate-700 font-black">${cKpi.toLocaleString()}</td>
-            <td class="text-center font-black">${c}</td>
-            <td class="text-center font-bold ${getRrColor(cRr, cKpi)}">${cRr}</td>
-            <td class="text-center font-black">${s}</td>
-            <td class="text-center font-black">${u}</td>
-            <td class="text-center font-black">${revTotDisplay}</td>
-            <td class="text-center font-black">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
-          </tr>`; 
-        }
-
-        if (type === 'CPL') { 
-          const l = list.reduce((a,p) => a + (typeof p.cplMtd === 'number' ? p.cplMtd : 0), 0);
-          const lRr = list.reduce((a,p) => a + (typeof p._cplRr === 'number' ? p._cplRr : 0), 0); 
-          const lKpi = totKpis.cpl?.kpi || 4000;
-          return `<tr>
-            <td class="p-2 font-black">Grand total</td>
-            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
-            <td class="text-center font-black">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
-            <td class="text-center text-slate-700 font-black">${lKpi.toLocaleString()}</td>
-            <td class="text-center font-black">${l}</td>
-            <td class="text-center font-black ${getRrColor(lRr, lKpi)}">${lRr}</td>
-            <td class="text-center font-black">${s}</td>
-            <td class="text-center font-black">${u}</td>
-            <td class="text-center font-black">${revTotDisplay}</td>
-            <td class="text-center font-black">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
-          </tr>`; 
-        }
-      };
-
-      container.innerHTML = `
-        <!-- 1. CPA -->
-        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
-          <span class="text-xs font-black uppercase text-purple-900 bg-purple-100 px-3 py-1 rounded-md">CPA</span>
-          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('budget')" id="sort-cpa-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('registrations')" id="sort-cpa-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('cpa')" id="sort-cpa-cpa" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('revenue')" id="sort-cpa-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('status')" id="sort-cpa-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th rowspan="2" class="p-1.5 bg-slate-100 align-middle">Registrations</th><th colspan="3" class="p-1.5 bg-purple-100">CPA</th><th colspan="3" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>S2P</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cpaTableBody" class="font-semibold">${renderRows(cpa, 'CPA') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpa, 'CPA', cpaTotBKpi)}</tfoot></table></div>
-        </div>
-
-        <!-- 2. CPR -->
-        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
-          <span class="text-xs font-black uppercase text-amber-900 bg-amber-100 px-3 py-1 rounded-md">CPR</span>
-          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCprTable('budget')" id="sort-cpr-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCprTable('cpr')" id="sort-cpr-cpr" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('registrations')" id="sort-cpr-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('users')" id="sort-cpr-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('revenue')" id="sort-cpr-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('status')" id="sort-cpr-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-amber-100">CPR</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cprTableBody" class="font-semibold">${renderRows(cpr, 'CPR') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No active CPR records</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${cpr.length ? renderFoot(cpr, 'CPR', cprTotBKpi) : ''}</tfoot></table></div>
-        </div>
-
-        <!-- 3. CPL -->
-        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
-          <span class="text-xs font-black uppercase text-sky-900 bg-sky-100 px-3 py-1 rounded-md">CPL</span>
-          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCplTable('budget')" id="sort-cpl-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCplTable('leads')" id="sort-cpl-leads" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('registrations')" id="sort-cpl-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('users')" id="sort-cpl-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('revenue')" id="sort-cpl-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('status')" id="sort-cpl-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-fuchsia-100">Leads</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cplTableBody" class="font-semibold">${renderRows(cpl, 'CPL') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpl, 'CPL', cplTotBKpi)}</tfoot></table></div>
-        </div>`;
-      
-      updateCpaSortIcons();
-      updateCprSortIcons();
-      updateCplSortIcons();
     }
 
     function renderInactive(list) {
