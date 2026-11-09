@@ -50,7 +50,7 @@
             </button>
             <div id="toPop" class="hidden absolute top-full left-0 mt-2 z-50 bg-white p-4 rounded-2xl shadow-2xl border border-slate-200 w-72 select-none">
               <div class="flex items-center justify-between font-black text-xs text-slate-800 mb-2">
-                <button onclick="navCal('to', -1, event)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700"><i class="fa-solid fa-chevron-right text-[11px]"></i></button>
+                <button onclick="navCal('to', -1, event)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700"><i class="fa-solid fa-chevron-left text-[11px]"></i></button>
                 <span id="toMonthLabel" class="uppercase"></span>
                 <button onclick="navCal('to', 1, event)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700"><i class="fa-solid fa-chevron-right text-[11px]"></i></button>
               </div>
@@ -430,10 +430,8 @@
       const lastDayOfMonth = fmtYMD(new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0));
       const isFull = Boolean(data.date_range && sYMD === data.date_range.start && (eYMD === data.date_range.end || (eYMD >= data.date_range.end && eYMD <= lastDayOfMonth)));
       
-      // Tomar exactamente los registros que vienen en el JSON dentro del rango seleccionado
       let slice = (data.daily_series || []).filter(r => r.date && r.date >= sYMD && r.date <= eYMD);
 
-      // Si no hay datos en ese rango, evitar romper el flujo
       if (slice.length === 0) {
         let cur = new Date(sDate);
         while (cur <= eDate) {
@@ -646,22 +644,50 @@
             signups: 0,
             ftd: 0,
             revenue: 0,
-            budget: 0
+            budget: 0,
+            media_partners: []
           };
         }
         bMap[key].signups += (b.signups || 0);
         bMap[key].ftd += (b.ftd || 0);
         bMap[key].revenue += Number((b.revenue || 0).toFixed(2));
         bMap[key].budget += Number((b.budget || 0).toFixed(2));
+        if (b.media_partners && b.media_partners !== '-') {
+          bMap[key].media_partners.push(b.media_partners);
+        }
       }));
 
       const multiBrands = Object.values(bMap).map(b => ({
         ...b,
-        profit: Number((b.revenue - b.budget).toFixed(2))
+        profit: Number((b.revenue - b.budget).toFixed(2)),
+        media_partners: b.media_partners.length > 0 ? Array.from(new Set(b.media_partners.join(' | ').split(' | '))).join(' | ') : '-'
       }));
       renderBrandsSummary(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
 
       renderInactive(covered[covered.length - 1]?.inactive_partners || []);
+    }
+
+    // TOGGLE MEDIA PARTNERS
+    function toggleBrandDetail(detailId, e) {
+      e?.stopPropagation();
+      const row = document.getElementById(detailId);
+      const icon = document.getElementById('icon-' + detailId);
+      if (!row) return;
+      
+      const isHidden = row.classList.contains('hidden');
+      if (isHidden) {
+        row.classList.remove('hidden');
+        if (icon) {
+          icon.classList.remove('fa-plus');
+          icon.classList.add('fa-minus');
+        }
+      } else {
+        row.classList.add('hidden');
+        if (icon) {
+          icon.classList.remove('fa-minus');
+          icon.classList.add('fa-plus');
+        }
+      }
     }
 
     function sortBrandsTable(key) {
@@ -683,7 +709,13 @@
         return brandsSortDir === 'desc' ? vB - vA : vA - vB;
       });
 
-      rows.forEach(r => tbody.appendChild(r));
+      rows.forEach(r => {
+        tbody.appendChild(r);
+        if (r.dataset.detailId) {
+          const detailRow = document.getElementById(r.dataset.detailId);
+          if (detailRow) tbody.appendChild(detailRow);
+        }
+      });
       updateBrandsSortIcons();
     }
 
@@ -716,7 +748,7 @@
 
       let totSignups = 0, totFtd = 0, totRev = 0, totBudget = 0;
 
-      const rowsHtml = brands.map(item => {
+      const rowsHtml = brands.map((item, idx) => {
         const s = Math.round((item.signups || 0) * (ratios.sRatio ?? 1));
         const f = Math.round((item.ftd || 0) * (ratios.uRatio ?? 1));
         const b = Math.round((item.budget || 0) * (ratios.bRatio ?? 1));
@@ -736,21 +768,57 @@
         const profitDisplay = (p < 0 ? '-$' : '$') + Math.round(Math.abs(p)).toLocaleString();
         const profitColor = p < 0 ? 'text-red-custom' : (p > 0 ? 'text-green-custom' : 'text-slate-700');
 
-        return `<tr class="hover:bg-slate-50 transition-colors brand-row" 
-                    data-signups="${s}" 
-                    data-ftd="${f}" 
-                    data-revenue="${r}" 
-                    data-budget="${b}" 
-                    data-profit="${p}" 
-                    data-s2p="${rawS2p}">
+        const detailId = `brand-detail-${idx}`;
+        const mpRaw = item.media_partners || '-';
+        const hasPartners = mpRaw !== '-' && mpRaw.trim() !== '';
+
+        let badgesHtml = '';
+        if (hasPartners) {
+          const list = mpRaw.split('|').map(x => x.trim()).filter(Boolean);
+          badgesHtml = list.map(itemStr => `
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-800 shadow-2xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+              ${itemStr}
+            </span>
+          `).join('');
+        } else {
+          badgesHtml = `<span class="text-[11px] font-semibold text-slate-400 italic">No media partners reported</span>`;
+        }
+
+        return `
+        <tr class="hover:bg-slate-50 transition-colors brand-row" 
+            data-signups="${s}" 
+            data-ftd="${f}" 
+            data-revenue="${r}" 
+            data-budget="${b}" 
+            data-profit="${p}" 
+            data-s2p="${rawS2p}"
+            data-detail-id="${detailId}">
           <td class="p-2 font-bold text-left text-slate-900">${item.advertiser || '—'}</td>
-          <td class="p-2 font-semibold text-left text-slate-700">${item.brand || '—'}</td>
+          <td class="p-2 font-semibold text-left text-slate-700">
+            <div class="flex items-center justify-between gap-1.5">
+              <span>${item.brand || '—'}</span>
+              <button type="button" onclick="toggleBrandDetail('${detailId}', event)" class="w-4 h-4 shrink-0 rounded flex items-center justify-center bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-700 transition-colors text-[9px] font-black cursor-pointer shadow-2xs" title="Ver Media Partners">
+                <i id="icon-${detailId}" class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+          </td>
           <td class="p-2 text-center font-bold text-slate-800">${s.toLocaleString()}</td>
           <td class="p-2 text-center font-black text-slate-900">${f.toLocaleString()}</td>
           <td class="p-2 text-center font-bold text-slate-800">${revDisplay}</td>
           <td class="p-2 text-center font-bold text-slate-800">${bDisplay}</td>
           <td class="p-2 text-center font-extrabold ${profitColor}">${profitDisplay}</td>
           <td class="p-2 text-center font-black text-purple-700">${s2p}</td>
+        </tr>
+        <tr id="${detailId}" class="hidden bg-slate-50/90 border-y border-slate-200 brand-detail-row">
+          <td colspan="8" class="py-2.5 px-4 text-left">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-wide flex items-center gap-1.5 shrink-0">
+                <i class="fa-solid fa-network-wired text-blue-500"></i> Media Partners:
+              </span>
+              ${badgesHtml}
+            </div>
+          </td>
         </tr>`;
       }).join('');
 
@@ -763,7 +831,13 @@
           const vB = parseFloat(b.dataset[brandsSortKey]) || 0;
           return brandsSortDir === 'desc' ? vB - vA : vA - vB;
         });
-        rows.forEach(r => tbody.appendChild(r));
+        rows.forEach(r => {
+          tbody.appendChild(r);
+          if (r.dataset.detailId) {
+            const detailRow = document.getElementById(r.dataset.detailId);
+            if (detailRow) tbody.appendChild(detailRow);
+          }
+        });
       }
       updateBrandsSortIcons();
 
