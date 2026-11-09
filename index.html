@@ -3,455 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <title>WiseKapital - Marketing Performance Dashboard</title>
-  
+  <title>MMR Media Management Report</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Kalam:wght@700&family=Inter:wght@400;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    body { background-color: #F8FAFC; color: #0F172A; font-family: 'Inter', sans-serif; }
-    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
-    .glass-card { background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-    .master-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 11px; }
-    .master-table th, .master-table td { border-right: 1px solid #D1D5DB; border-bottom: 1px solid #D1D5DB; padding: 5px 6px; white-space: nowrap; text-align: center; }
-    .master-table thead tr:first-child th { border-top: 1px solid #D1D5DB; font-size: 10.5px; font-weight: 800; }
-    .sticky-col { position: sticky; left: 0; z-index: 10; border-left: 1px solid #D1D5DB; background: #fff; }
-    .editable-cell { outline: none; cursor: text; transition: filter 0.15s; }
-    .editable-cell:hover { filter: brightness(0.95); }
-    .editable-cell:focus { background-color: #FFF !important; box-shadow: inset 0 0 0 2px #2563EB !important; font-weight: 700; }
-    .readonly-cell { cursor: default; user-select: none; }
-    .col-budget { background-color: #F4F4F4 !important; }
-    .col-views { background-color: #F0F5FA !important; }
-    .col-prod { background-color: #FFFBEB !important; }
-    .col-clicks { background-color: #FEF6ED !important; }
-    .col-regs { background-color: #F2F8F1 !important; }
-    .col-users { background-color: #FAF2F6 !important; }
-    .col-perf { background-color: #F3F7FE !important; }
+    body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+    .bg-mint-header { background-color: #e8f5e9; }
+    .text-green-custom { color: #00b074 !important; }
+    .text-red-custom { color: #e11d48 !important; }
+    table.table-grid, table.table-grid th, table.table-grid td { border: 1px solid #cbd5e1 !important; border-collapse: collapse !important; }
+    table.table-grid tr.sort-row-borderless th { border: none !important; background: transparent !important; padding: 4px 0 8px; }
+    ::-webkit-scrollbar { width: 5px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
-
-  <!-- TOAST -->
-  <div id="saveToast" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 transform transition-all duration-300 translate-y-24 opacity-0 pointer-events-none">
-    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
-    <span id="saveToastText">Updated</span>
-  </div>
-
-  <!-- HEADER -->
-  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 shadow-xs">
-    <div class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-2">
-      <div class="flex items-center justify-between flex-wrap gap-4 min-h-[4rem]">
-        
-        <div class="flex items-center gap-4">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 88" class="h-9 w-auto select-none">
-            <text x="4" y="47" font-family="'Poppins', sans-serif" font-weight="700" font-size="47" fill="#111827">WiseKapital</text>
-            <text x="112" y="77" font-family="'Kalam', cursive" font-weight="700" font-size="26" fill="#ECA51A">Who Dares Wins!</text>
-          </svg>
-          <div class="hidden sm:block pl-4 border-l border-slate-200">
-            <div class="flex items-center gap-2">
-              <span class="font-display font-bold text-slate-800 text-sm">Social Report</span>
-              <span id="liveStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Syncing...</span>
-              <span id="headerPathBadge" class="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Loading...</span>
-              <span id="editModeBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold"></span>
-            </div>
-            <p id="dateAutoInfo" class="text-xs text-slate-500 font-medium mt-0.5">Loading...</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2.5 flex-wrap">
-          <!-- DATE PICKER -->
-          <div class="flex items-center gap-2 font-bold text-xs">
-            <span class="text-slate-400">FROM</span>
-            <div class="relative">
-              <button id="fromBtn" onclick="toggleCal('from', event)" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-black text-slate-800 hover:border-slate-400 cursor-pointer flex items-center gap-2 shadow-xs">
-                <span id="fromDateText">11/01/2026</span>
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-600"></i>
-              </button>
-              <div id="fromPop" class="hidden absolute top-full left-0 mt-2 z-50 bg-white p-4 rounded-2xl shadow-2xl border border-slate-200 w-[280px]">
-                <div class="flex items-center justify-between font-black text-xs text-slate-900 mb-3 px-1">
-                  <button onclick="navCalMonth('from', -1, event)" class="p-1 hover:bg-slate-100 rounded-lg cursor-pointer"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                  <span id="fromMonthYearLabel" class="font-extrabold text-xs tracking-wider uppercase">...</span>
-                  <button onclick="navCalMonth('from', 1, event)" class="p-1 hover:bg-slate-100 rounded-lg cursor-pointer"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                </div>
-                <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-slate-700 mb-2">
-                  <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span>
-                </div>
-                <div id="fromDaysGrid" class="grid grid-cols-7 gap-1 text-center text-xs font-bold"></div>
+<body class="p-3 md:p-6 min-h-screen">
+  <div class="max-w-[1400px] mx-auto space-y-5">
+    
+    <!-- HEADER -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-3 md:gap-5">
+        <span class="w-3 h-3 rounded-full bg-blue-600 shrink-0"></span>
+        <h1 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight">MMR Media Management Report</h1>
+        <div class="flex items-center gap-2 text-xs font-extrabold text-slate-500">
+          <span class="tracking-wider uppercase text-[11px] text-slate-400">FROM</span>
+          <div class="relative">
+            <button id="fromBtn" onclick="toggleCal('from', event)" class="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-800 shadow-2xs">
+              <span id="fromDateText"></span><i class="fa-regular fa-calendar text-slate-700"></i>
+            </button>
+            <div id="fromPop" class="hidden absolute top-full left-0 mt-2 z-50 bg-white p-4 rounded-2xl shadow-2xl border border-slate-200 w-72 select-none">
+              <div class="flex items-center justify-between font-black text-xs text-slate-800 mb-2">
+                <button onclick="navCal('from', -1, event)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700"><i class="fa-solid fa-chevron-left text-[11px]"></i></button>
+                <span id="fromMonthLabel" class="uppercase"></span>
+                <button onclick="navCal('from', 1, event)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700"><i class="fa-solid fa-chevron-right text-[11px]"></i></button>
               </div>
-            </div>
-
-            <span class="text-slate-400">TO</span>
-            <div class="relative">
-              <button id="toBtn" onclick="toggleCal('to', event)" class="px-3 py-1.5 bg-white border-2 border-slate-900 rounded-lg text-xs font-black text-slate-900 cursor-pointer flex items-center gap-2 shadow-xs">
-                <span id="toDateText">11/03/2026</span>
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-900"></i>
-              </button>
-              <div id="toPop" class="hidden absolute top-full right-0 mt-2 z-50 bg-white p-4 rounded-2xl shadow-2xl border border-slate-200 w-[280px]">
-                <div class="flex items-center justify-between font-black text-xs text-slate-900 mb-3 px-1">
-                  <button onclick="navCalMonth('to', -1, event)" class="p-1 hover:bg-slate-100 rounded-lg cursor-pointer"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                  <span id="toMonthYearLabel" class="font-extrabold text-xs tracking-wider uppercase">...</span>
-                  <button onclick="navCalMonth('to', 1, event)" class="p-1 hover:bg-slate-100 rounded-lg cursor-pointer"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                </div>
-                <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-slate-700 mb-2">
-                  <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span>
-                </div>
-                <div id="toDaysGrid" class="grid grid-cols-7 gap-1 text-center text-xs font-bold"></div>
-              </div>
+              <div class="grid grid-cols-7 text-center text-[10px] font-black text-slate-700 mb-2"><span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span></div>
+              <div id="fromDaysGrid" class="grid grid-cols-7 text-center text-xs font-bold gap-y-1"></div>
             </div>
           </div>
-
-          <!-- BOTÓN SAVE TO GIT -->
-          <button id="saveGitBtn" onclick="saveDashboardData(false)" class="px-4 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="save" class="w-3.5 h-3.5"></i><span id="saveGitBtnText">Save to Git</span>
-          </button>
-
-          <!-- BOTÓN EXPORT EXCEL -->
-          <button onclick="exportToExcel()" class="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i><span>Export Excel</span>
-          </button>
+          <span class="tracking-wider uppercase text-[11px] text-slate-400 ml-1">TO</span>
+          <div class="relative">
+            <button id="toBtn" onclick="toggleCal('to', event)" class="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-black text-slate-800 shadow-2xs">
+              <span id="toDateText"></span><i class="fa-regular fa-calendar text-slate-700"></i>
+            </button>
+            <div id="toPop" class="hidden absolute top-full left-0 mt-2 z-50 bg-white p-4 rounded-2xl shadow-2xl border border-slate-200 w-72 select-none">
+              <div class="flex items-center justify-between font-black text-xs text-slate-800 mb-2">
+                <button onclick="navCal('to', -1, event)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700"><i class="fa-solid fa-chevron-right text-[11px]"></i></button>
+                <span id="toMonthLabel" class="uppercase"></span>
+                <button onclick="navCal('to', 1, event)" class="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-100 text-slate-700"><i class="fa-solid fa-chevron-right text-[11px]"></i></button>
+              </div>
+              <div class="grid grid-cols-7 text-center text-[10px] font-black text-slate-700 mb-2"><span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span></div>
+              <div id="toDaysGrid" class="grid grid-cols-7 text-center text-xs font-bold gap-y-1"></div>
+            </div>
+          </div>
         </div>
-
+      </div>
+      <div class="flex gap-2">
+        <button onclick="switchTab('all')" id="tab-all" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 text-white">All Views</button>
+        <button onclick="switchTab('v1')" id="tab-v1" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">View 1 (Summary)</button>
+        <button onclick="switchTab('v2')" id="tab-v2" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">View 2 (Campaign Tables)</button>
       </div>
     </div>
-  </header>
 
-  <!-- MAIN -->
-  <main class="flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-
-    <!-- TEAM PERFORMANCE -->
-    <div class="space-y-2">
-      <h2 class="text-base font-bold font-display text-slate-900">Team Performance</h2>
-      <div class="glass-card rounded-xl overflow-hidden">
-        <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-xs border-collapse text-center">
+    <!-- SECCIÓN 1: SUMMARY -->
+    <div id="section-v1" class="space-y-5">
+      <!-- TEAM PERFORMANCE -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-extrabold text-slate-900 tracking-tight">Team Performance</h3>
+          <span id="teamPerfSub" class="text-[11px] font-bold text-slate-400"></span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-center text-xs min-w-[1050px]">
             <thead>
-              <tr>
-                <th class="bg-white py-2 px-3 font-extrabold text-slate-900" style="width: 100px;">TEAM</th>
-                <th colspan="5" id="tpKpiHeaderTitle" class="bg-[#1976D2] text-white font-extrabold py-2 px-2 border-r border-white/20">KPIS</th>
-                <th colspan="5" class="bg-[#2E7D32] text-white font-extrabold py-2 px-2 border-r border-white/20">MTD</th>
-                <th colspan="6" class="bg-[#B45309] text-white font-extrabold py-2 px-2">RR - RUN-RATE</th>
+              <tr class="text-white text-xs font-black uppercase">
+                <th class="p-2.5 text-left text-slate-900 bg-white w-28 pl-4">TEAM</th>
+                <th colspan="5" class="p-2.5 bg-blue-600">KPIS</th>
+                <th colspan="5" class="p-2.5 bg-emerald-600" id="tp-header-period">MTD</th>
+                <th colspan="6" class="p-2.5 bg-amber-700">RR - RUN-RATE TO END OF PERIOD</th>
               </tr>
-              <tr class="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">
-                <th class="py-2 px-2"></th>
-                <th class="py-2 px-2">BUDGET</th><th class="py-2 px-2">SIGNUPS</th><th class="py-2 px-2">USERS</th><th class="py-2 px-2">REVENUE</th><th class="py-2 px-2 border-r border-slate-200">PROFIT</th>
-                <th class="py-2 px-2">BUDGET</th><th class="py-2 px-2">SIGNUPS</th><th class="py-2 px-2">USERS</th><th class="py-2 px-2">REVENUE</th><th class="py-2 px-2 border-r border-slate-200">PROFIT</th>
-                <th class="py-2 px-2">BUDGET</th><th class="py-2 px-2">SIGNUPS</th><th class="py-2 px-2">USERS</th><th class="py-2 px-2">REVENUE</th><th class="py-2 px-2">PROFIT</th><th class="py-2 px-2">ROI</th>
+              <tr class="text-[10px] font-extrabold uppercase text-slate-400 border-b border-slate-200">
+                <th class="py-2 pl-4"></th><th>BUDGET</th><th>SIGNUPS</th><th>USERS</th><th>REVENUE</th><th class="border-r">PROFIT</th>
+                <th>BUDGET</th><th>SIGNUPS</th><th>USERS</th><th>REVENUE</th><th class="border-r">PROFIT</th>
+                <th>BUDGET</th><th>SIGNUPS</th><th>USERS</th><th>REVENUE</th><th>PROFIT</th><th class="pr-4">ROI</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100 bg-white">
+            <tbody class="font-bold text-slate-800">
               <tr>
-                <td class="py-3 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#FCE4EC] text-[#D81B60]">SOCIAL</span></td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" onkeydown="cellEnter(event,this)" onblur="onKpiEdit(this, 'budget')" id="tpKpiBudget">$0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" onkeydown="cellEnter(event,this)" onblur="onKpiEdit(this, 'signups')" id="tpKpiSignups">0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" onkeydown="cellEnter(event,this)" onblur="onKpiEdit(this, 'users')" id="tpKpiUsers">0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" onkeydown="cellEnter(event,this)" onblur="onKpiEdit(this, 'revenue')" id="tpKpiRevenue">$0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px] border-r border-slate-200" onkeydown="cellEnter(event,this)" onblur="onKpiEdit(this, 'profit')" id="tpKpiProfit">$0</td>
-
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpMtdBudget">$0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpMtdSignups">0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpMtdUsers">0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpMtdRevenue">$0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px] border-r border-slate-200" id="tpMtdProfit">$0</td>
-
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpRrBudget">$0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpRrSignups">0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpRrUsers">0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpRrRevenue">$0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpRrProfit">$0</td>
-                <td class="py-3 px-2 font-extrabold text-[13px]" id="tpRoiRatio">1:0.4</td>
+                <td class="py-3 pl-4 text-left"><span class="bg-amber-100 text-amber-800 text-[11px] font-black px-3 py-1 rounded-full uppercase">MEDIA</span></td>
+                <td id="tp-kpi-budget">$5,500</td><td id="tp-kpi-signups">1,000</td><td id="tp-kpi-users">300</td><td id="tp-kpi-revenue">$16,500</td><td id="tp-kpi-profit" class="border-r">$11,000</td>
+                <td id="tp-mtd-budget">$0</td><td id="tp-mtd-signups">0</td><td id="tp-mtd-users">0</td><td id="tp-mtd-revenue">$0</td><td id="tp-mtd-profit" class="border-r">$0</td>
+                <td id="tp-rr-budget">$0</td><td id="tp-rr-signups">0</td><td id="tp-rr-users">0</td><td id="tp-rr-revenue">$0</td><td id="tp-rr-profit">$0</td><td id="tp-rr-roi" class="pr-4">1:0.0</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-    </div>
 
-    <!-- KPI CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-      <div class="glass-card rounded-xl p-4 border-l-4 border-l-indigo-500">
-        <div class="flex items-center justify-between text-slate-500 mb-1"><span class="text-xs font-bold uppercase">BUDGET</span><i data-lucide="wallet" class="w-3.5 h-3.5 text-indigo-600"></i></div>
-        <div class="text-2xl font-extrabold font-display text-slate-900" id="kpiBudget">$0</div>
-        <div class="flex items-center gap-1.5 mt-1.5"><span class="text-[11px] font-extrabold bg-slate-100 border border-slate-300 px-2 py-0.5 rounded" id="kpiTargetBudget">KPI: $0</span><span id="rrBudget" class="text-[11px] font-extrabold px-2 py-0.5 rounded border">RR: $0</span></div>
-      </div>
-      <div class="glass-card rounded-xl p-4 border-l-4 border-l-amber-500">
-        <div class="flex items-center justify-between text-slate-500 mb-1"><span class="text-xs font-bold uppercase">Signups</span><i data-lucide="user-plus" class="w-3.5 h-3.5 text-amber-600"></i></div>
-        <div class="text-2xl font-extrabold font-display text-slate-900" id="kpiSignups">0</div>
-        <div class="flex items-center gap-1.5 mt-1.5"><span class="text-[11px] font-extrabold bg-slate-100 border border-slate-300 px-2 py-0.5 rounded" id="kpiTargetSignups">KPI: 0</span><span id="rrSignups" class="text-[11px] font-extrabold px-2 py-0.5 rounded border">RR: 0</span></div>
-      </div>
-      <div class="glass-card rounded-xl p-4 border-l-4 border-l-purple-500">
-        <div class="flex items-center justify-between text-slate-500 mb-1"><span class="text-xs font-bold uppercase">Users (FTD)</span><i data-lucide="badge-check" class="w-3.5 h-3.5 text-purple-600"></i></div>
-        <div class="text-2xl font-extrabold font-display text-slate-900" id="kpiFtd">0</div>
-        <div class="flex items-center gap-1.5 mt-1.5"><span class="text-[11px] font-extrabold bg-slate-100 border border-slate-300 px-2 py-0.5 rounded" id="kpiTargetUsers">KPI: 0</span><span id="rrFtd" class="text-[11px] font-extrabold px-2 py-0.5 rounded border">RR: 0</span></div>
-      </div>
-      <div class="glass-card rounded-xl p-4 border-l-4 border-l-emerald-500">
-        <div class="flex items-center justify-between text-slate-500 mb-1"><span class="text-xs font-bold uppercase">Revenue</span><i data-lucide="dollar-sign" class="w-3.5 h-3.5 text-emerald-600"></i></div>
-        <div class="text-2xl font-extrabold font-display text-slate-900" id="kpiRevenue">$0</div>
-        <div class="flex items-center gap-1.5 mt-1.5"><span class="text-[11px] font-extrabold bg-slate-100 border border-slate-300 px-2 py-0.5 rounded" id="kpiTargetRevenue">KPI: $0</span><span id="rrRevenue" class="text-[11px] font-extrabold px-2 py-0.5 rounded border">RR: $0</span></div>
-      </div>
-      <div class="glass-card rounded-xl p-4 border-l-4 border-l-teal-500">
-        <div class="flex items-center justify-between text-slate-500 mb-1"><span class="text-xs font-bold uppercase">Profit</span><i data-lucide="trending-up" class="w-3.5 h-3.5 text-teal-600"></i></div>
-        <div class="text-2xl font-extrabold font-display text-slate-900" id="kpiProfit">$0</div>
-        <div class="flex items-center gap-1.5 mt-1.5"><span class="text-[11px] font-extrabold bg-slate-100 border border-slate-300 px-2 py-0.5 rounded" id="kpiTargetProfit">KPI: $0</span><span id="rrProfit" class="text-[11px] font-extrabold px-2 py-0.5 rounded border">RR: $0</span></div>
+      <!-- 5 METRIC CARDS & PROGRESS BARS -->
+      <div id="metrics-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 items-start"></div>
+
+      <!-- MAIN LINE CHART -->
+      <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h3 id="lineChartTitle" class="text-base font-extrabold text-slate-900 mb-3"></h3>
+        <div class="relative w-full h-72 md:h-80"><canvas id="mainLineChart"></canvas></div>
       </div>
     </div>
 
-    <!-- PLATFORM TABLES (META, INSTAGRAM, X) -->
-    <div id="platformsContainer" class="space-y-8"></div>
+    <!-- SECCIÓN 2: 3 TABLAS DE DESGLOSE Y BRANDS SUMMARY -->
+    <div id="section-v2" class="space-y-6">
+      <div id="breakdown-tables-container" class="space-y-6"></div>
 
-    <!-- PERFORMANCE TAKE AWAYS TABLES (DEBAJO DE X Y ARRIBA DE LAS GRAFICAS) -->
-    <div id="takeawaysContainer" class="space-y-8 pt-4 border-t border-slate-200"></div>
-
-    <!-- CHARTS -->
-    <div class="space-y-6 pt-4 border-t border-slate-200">
-      <h2 class="text-base font-bold font-display text-slate-900">Platform Performance: Meta, Instagram &amp; X</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
-          <h3 class="text-sm font-bold font-display text-slate-900 mb-2">Signups by Platform</h3>
-          <div class="relative h-52 flex items-center justify-center"><canvas id="signupsPieChart"></canvas></div>
-          <div class="mt-3 pt-2 border-t border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
-            <div class="p-1.5 rounded bg-blue-50 text-blue-900 font-bold">Meta: <span id="pieMetaSignups">0</span></div>
-            <div class="p-1.5 rounded bg-pink-50 text-pink-900 font-bold">Instagram: <span id="pieIGSignups">0</span></div>
-          </div>
-        </div>
-        <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
-          <h3 class="text-sm font-bold font-display text-slate-900 mb-2">Users (FTD) by Platform</h3>
-          <div class="relative h-52 flex items-center justify-center"><canvas id="usersPieChart"></canvas></div>
-          <div class="mt-3 pt-2 border-t border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
-            <div class="p-1.5 rounded bg-blue-50 text-blue-900 font-bold">Meta: <span id="pieMetaUsers">0</span></div>
-            <div class="p-1.5 rounded bg-pink-50 text-pink-900 font-bold">Instagram: <span id="pieIGUsers">0</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div class="glass-card rounded-2xl p-4 border-t-4 border-t-blue-600">
-          <div class="flex items-center justify-between mb-2"><h3 class="text-sm font-bold text-slate-900">Meta</h3><span id="badgeRoiMeta" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 border">ROI: 0.0%</span></div>
-          <div class="relative h-48 w-full"><canvas id="metaBudgetRevenueChart"></canvas></div>
-        </div>
-        <div class="glass-card rounded-2xl p-4 border-t-4 border-t-pink-600">
-          <div class="flex items-center justify-between mb-2"><h3 class="text-sm font-bold text-slate-900">Instagram</h3><span id="badgeRoiIG" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 border">ROI: 0.0%</span></div>
-          <div class="relative h-48 w-full"><canvas id="instagramBudgetRevenueChart"></canvas></div>
-        </div>
-        <div class="glass-card rounded-2xl p-4 border-t-4 border-t-slate-900">
-          <div class="flex items-center justify-between mb-2"><h3 class="text-sm font-bold text-slate-900">X</h3><span id="badgeRoiX" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 border">ROI: 0.0%</span></div>
-          <div class="relative h-48 w-full"><canvas id="xBudgetRevenueChart"></canvas></div>
+      <!-- BRANDS SUMMARY REPORT -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs table-grid">
+            <thead>
+              <tr class="font-black text-center select-none text-slate-800 bg-slate-100">
+                <th colspan="8" class="p-2 uppercase tracking-wide text-xs">BRANDS SUMMARY REPORT</th>
+              </tr>
+              <tr class="sort-row-borderless select-none">
+                <th></th>
+                <th></th>
+                <th class="text-center">
+                  <button onclick="sortBrandsTable('signups')" id="sort-brand-signups" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortBrandsTable('ftd')" id="sort-brand-ftd" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortBrandsTable('revenue')" id="sort-brand-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortBrandsTable('budget')" id="sort-brand-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortBrandsTable('profit')" id="sort-brand-profit" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortBrandsTable('s2p')" id="sort-brand-s2p" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+              </tr>
+              <tr class="font-extrabold text-center select-none text-xs">
+                <th class="p-2 text-left bg-slate-50 text-slate-800">Advertiser</th>
+                <th class="p-2 text-left bg-slate-50 text-slate-800">Brand</th>
+                <th class="p-2 text-center bg-blue-100 text-blue-900 font-black">SignUps</th>
+                <th class="p-2 text-center bg-purple-100 text-purple-900 font-black">Ftd</th>
+                <th class="p-2 text-center bg-emerald-100 text-emerald-900 font-black">Revenue</th>
+                <th class="p-2 text-center bg-sky-100 text-sky-900 font-black">Budget</th>
+                <th class="p-2 text-center bg-teal-100 text-teal-900 font-black">Profit</th>
+                <th class="p-2 text-center bg-purple-100 text-purple-900 font-black">S2P</th>
+              </tr>
+            </thead>
+            <tbody id="brandsSummaryBody" class="font-semibold text-slate-700 divide-y divide-slate-100">
+              <tr><td colspan="8" class="p-3 text-center text-slate-400">Loading data...</td></tr>
+            </tbody>
+            <tfoot id="brandsSummaryFoot" class="font-black bg-slate-50 border-t-2"></tfoot>
+          </table>
         </div>
       </div>
     </div>
 
-  </main>
+    <!-- SECCIÓN 3: INACTIVE PARTNERS -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+      <div class="overflow-x-auto max-h-56 overflow-y-auto">
+        <table class="w-full text-xs table-grid">
+          <thead><tr class="bg-slate-100 text-slate-700 font-extrabold sticky top-0"><th class="py-2 px-3 text-left">Inactive Media Partners</th></tr></thead>
+          <tbody id="inactivePartnersBody" class="font-semibold divide-y divide-slate-200 text-slate-700"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
 
   <script>
-    const GH_OWNER = "WiseKapital";
-    const GH_REPO = "Social-Management-Report";
-    const GH_BRANCH = "main";
-    let GITHUB_TOKEN = ["ghp", "VfiGT1ji2NQLpV2Id5mnGLtRUI8F912uRwni"].join("_");
-
-    let appData = null;
-    let rawMonthData = null;
-    let chartSignups = null, chartUsers = null, chartMetaBR = null, chartIGBR = null, chartXBR = null;
-
-    const shortMonthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const fullMonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let currentRrFactor = 1;
+    const DATA_CACHE = {};
+    const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
-    const sysToday = new Date();
-    let currentLoadedYear = sysToday.getFullYear();
-    let currentLoadedMonth = fullMonthNames[sysToday.getMonth()];
+    const MIN_SYSTEM_DATE = new Date(2026, 6, 1);
 
-    let fromDate = new Date(sysToday.getFullYear(), sysToday.getMonth(), 1);
-    let toDate = new Date(sysToday.getFullYear(), sysToday.getMonth(), sysToday.getDate());
-    let fromViewYear = fromDate.getFullYear(), fromViewMonth = fromDate.getMonth();
-    let toViewYear = toDate.getFullYear(), toViewMonth = toDate.getMonth();
+    function getSystemToday() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+    
+    let today = getSystemToday();
+    let fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    if (fromDate < MIN_SYSTEM_DATE) fromDate = new Date(MIN_SYSTEM_DATE);
+    
+    let toDate = new Date(today);
+    let fromViewYear = today.getFullYear(), toViewYear = today.getFullYear();
+    let fromViewMonth = today.getMonth(), toViewMonth = today.getMonth();
 
-    const fmtDateUS = d => {
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${mm}/${dd}/${d.getFullYear()}`;
+    let cpaSortKey = null, cpaSortDir = 'desc';
+    let cprSortKey = null, cprSortDir = 'desc';
+    let cplSortKey = null, cplSortDir = 'desc';
+    let brandsSortKey = 'ftd', brandsSortDir = 'desc';
+
+    const statusWeight = {
+      'working-well': 4,
+      'potential': 3,
+      'neutral': 2,
+      'not-working': 1
     };
+
+    function isCplPartner(p) {
+      if (p.name === 'FZY') return false;
+      if (p.model === 'CPA' || p.type === 'CPA') return false;
+      if (p.model === 'CPL' || p.type === 'CPL') return true;
+      return typeof p.cplMtd === 'number' && p.cplMtd > 0;
+    }
+
+    function isCprPartner(p) {
+      if (p.name === 'FZY') return false;
+      if (p.model === 'CPA' || p.type === 'CPA') return false;
+      if (p.model === 'CPR' || p.type === 'CPR') return true;
+      if (isCplPartner(p)) return false;
+      return typeof p.cprMtd === 'number' && p.cprMtd > 0;
+    }
+
+    function isCpaPartner(p) {
+      if (p.name === 'FZY') return true;
+      if (p.model === 'CPA' || p.type === 'CPA') return true;
+      if (isCplPartner(p) || isCprPartner(p)) return false;
+      return (typeof p.cpaMtd === 'number' && p.cpaMtd > 0) ||
+             (typeof p.sigMtd === 'number' && p.sigMtd > 0) ||
+             (typeof p.budget === 'number' && p.budget > 0);
+    }
+
+    function getRrColor(rrVal, kpiVal) {
+      if (kpiVal === '—' || kpiVal === undefined || kpiVal === null) return 'text-slate-500';
+      const r = parseFloat(String(rrVal).replace(/[^0-9.-]/g, ''));
+      const k = parseFloat(String(kpiVal).replace(/[^0-9.-]/g, ''));
+      if (isNaN(r) || isNaN(k)) return 'text-slate-500';
+      
+      return r >= k ? 'text-green-custom' : 'text-red-custom';
+    }
+
+    function getStatusBadge(status) {
+      if (status === 'working-well') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Working Well</span>`;
+      if (status === 'not-working') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-800"><span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Not Working Well</span>`;
+      if (status === 'potential') return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Potential</span>`;
+      return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600"><span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Neutral</span>`;
+    }
+
+    function distributeEqual(total, count) {
+      if (!count || count <= 0 || !total || total <= 0) return [];
+      const base = Math.floor(total / count);
+      const rem = total % count;
+      const res = [];
+      for (let i = 0; i < count; i++) {
+        res.push(i < rem ? base + 1 : base);
+      }
+      return res;
+    }
+
+    async function fetchJSON(url) {
+      try {
+        const res = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
+        return res.ok ? await res.json() : null;
+      } catch (e) { 
+        console.warn(`Error cargando ${url}:`, e);
+        return null; 
+      }
+    }
+
+    function getCacheKey(year, monthName) {
+      return `${year}_${monthName.toLowerCase()}`;
+    }
+
+    async function getMonthData(year, monthName) {
+      const key = getCacheKey(year, monthName);
+      if (!DATA_CACHE[key]) {
+        const path = `./${year}/data_${monthName.toLowerCase()}.json`;
+        const data = await fetchJSON(path);
+        if (data) DATA_CACHE[key] = data;
+      }
+      return DATA_CACHE[key];
+    }
+
+    async function loadAllJSONs() {
+      try {
+        today = getSystemToday();
+        fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        if (fromDate < MIN_SYSTEM_DATE) fromDate = new Date(MIN_SYSTEM_DATE);
+
+        toDate = new Date(today);
+        fromViewYear = toViewYear = today.getFullYear();
+        fromViewMonth = toViewMonth = today.getMonth();
+        updateDatesUI();
+
+        const currentYear = today.getFullYear();
+        const currentMonthName = MONTHS[today.getMonth()].toLowerCase();
+
+        const baseMonths = Array.from(new Set([
+          currentMonthName,
+          MONTHS[Math.max(0, today.getMonth() - 1)].toLowerCase(),
+          MONTHS[Math.max(0, today.getMonth() - 2)].toLowerCase()
+        ]));
+        
+        await Promise.all(baseMonths.map(m => getMonthData(currentYear, m)));
+
+        dispatchRange(fromDate, toDate);
+      } catch (err) {
+        console.error("Error al iniciar:", err);
+      }
+    }
+
+    const fmtMDY = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}/${d.getFullYear()}`;
+    const fmtYMD = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
     function updateDatesUI() {
-      setTxt('fromDateText', fmtDateUS(fromDate));
-      setTxt('toDateText', fmtDateUS(toDate));
-    }
-
-    function isEditingAllowed() {
-      if (!fromDate || !toDate) return false;
-      const startD = fromDate <= toDate ? fromDate : toDate;
-      const endD = fromDate <= toDate ? toDate : fromDate;
-
-      if (startD.getFullYear() !== endD.getFullYear() || startD.getMonth() !== endD.getMonth()) return false;
-      if (startD.getDate() !== 1) return false;
-
-      const now = new Date();
-      const isCurrentMonth = (endD.getFullYear() === now.getFullYear() && endD.getMonth() === now.getMonth());
-      const totalDaysInMonth = new Date(endD.getFullYear(), endD.getMonth() + 1, 0).getDate();
-
-      return isCurrentMonth ? endD.getDate() === now.getDate() : endD.getDate() === totalDaysInMonth;
-    }
-
-    const COOLDOWN_KEY = "wisekapital_save_cooldown_target";
-    const COOLDOWN_DURATION_SEC = 5 * 60;
-    let isSaveCooldown = false;
-    let saveCooldownTimer = null;
-    let cooldownRemaining = 0;
-
-    const fmtCooldownTime = (sec) => {
-      const m = Math.floor(sec / 60);
-      const s = sec % 60;
-      return m > 0 ? `${m}m ${s < 10 ? '0' : ''}${s}s` : `${s}s`;
-    };
-
-    function startSaveCooldown(seconds = COOLDOWN_DURATION_SEC) {
-      const targetTime = Date.now() + (seconds * 1000);
-      localStorage.setItem(COOLDOWN_KEY, targetTime.toString());
-      initOrResumeSaveCooldown();
-    }
-
-    function initOrResumeSaveCooldown() {
-      const storedTarget = localStorage.getItem(COOLDOWN_KEY);
-      if (!storedTarget) return;
-
-      const targetTime = parseInt(storedTarget, 10);
-      const now = Date.now();
-      const diffSec = Math.ceil((targetTime - now) / 1000);
-
-      if (diffSec <= 0) {
-        localStorage.removeItem(COOLDOWN_KEY);
-        isSaveCooldown = false;
-        return;
-      }
-
-      isSaveCooldown = true;
-      cooldownRemaining = diffSec;
-
-      const btn = document.getElementById('saveGitBtn');
-      const btnText = document.getElementById('saveGitBtnText');
-      if (!btn) return;
-
-      btn.disabled = true;
-      btn.classList.add('opacity-50', 'cursor-not-allowed');
-      btn.classList.remove('hover:bg-indigo-700', 'cursor-pointer');
-
-      if (saveCooldownTimer) clearInterval(saveCooldownTimer);
-
-      const renderWait = () => {
-        if (btnText) btnText.innerText = `Wait ${fmtCooldownTime(cooldownRemaining)}`;
-      };
-      renderWait();
-
-      saveCooldownTimer = setInterval(() => {
-        const remaining = Math.ceil((targetTime - Date.now()) / 1000);
-        cooldownRemaining = remaining;
-
-        if (remaining <= 0) {
-          clearInterval(saveCooldownTimer);
-          saveCooldownTimer = null;
-          isSaveCooldown = false;
-          localStorage.removeItem(COOLDOWN_KEY);
-          btn.disabled = !isEditingAllowed();
-          if (isEditingAllowed()) {
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            btn.classList.add('hover:bg-indigo-700', 'cursor-pointer');
-          }
-          if (btnText) btnText.innerText = 'Save to Git';
-        } else {
-          renderWait();
-        }
-      }, 1000);
-    }
-
-    const PLATFORMS = [
-      { key: 'meta', title: 'Meta (Facebook Ads)', btnBg: 'bg-blue-600 hover:bg-blue-700', bg: 'bg-[#0081FB]', icon: `<svg class="w-4 h-4 fill-white" viewBox="0 0 640 512"><path d="M640 317.9c0 91.3-39.4 148.5-110.3 148.5c-62.6 0-95.8-34.6-156.9-136.6l-31.4-52.6c-8.3-12.5-14.5-24.2-21.2-35c-20.1 33.8-47.1 83-47.1 83c-67 116.6-104.6 141.2-156.9 141.2C43.42 466.4 0 409.1 0 320.5c0-143 79.78-278.1 183.9-278.1c50.2 0 93.8 24.68 144.8 89.5c37.1-50.1 78.1-89.5 130.6-89.5c99.1 0 180.7 125.7 180.7 275.5M287.4 192.2c-42.9-62.1-70.9-80.5-104.4-80.5c-61.9 0-113.78 106.1-113.78 210c0 48.5 18.48 75.7 49.58 75.7c30.2 0 49-19 103.2-103.8c0 0 24.7-39.1 65.4-101.4m243.8 205.2c32.2 0 46.9-27.5 46.9-74.9c0-124.2-54.3-225.42-123.2-225.42c-33.2 0-61.1 25.92-94.9 78.02c9.4 13.8 19.1 29 29.3 45.4l37.5 62.4c58.7 94.1 73.5 114.5 104.4 114.5"/></svg>` },
-      { key: 'instagram', title: 'Instagram Ads', btnBg: 'bg-pink-600 hover:bg-pink-700', bg: 'bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888]', icon: `<svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>` },
-      { key: 'x', title: 'X Campaigns', btnBg: 'bg-slate-800 hover:bg-slate-900', bg: 'bg-black', icon: `<svg class="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>` }
-    ];
-
-    const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.innerText = v; };
-    const toNum = val => { if (val === undefined || val === null || val === '—' || val === '-' || val === '') return 0; const n = parseFloat(String(val).replace(/[$,%]/g, '')); return isNaN(n) ? 0 : n; };
-    const utf8ToB64 = str => { const bytes = new TextEncoder().encode(str); let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b)); return btoa(bin); };
-    const b64ToUtf8 = b64 => { const bin = atob(b64.replace(/\s/g, '')); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); };
-    
-    const cellEnter = (e, el) => {
-      if (!isEditingAllowed()) { e.preventDefault(); el.blur(); return; }
-      if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
-    };
-    const getRrColorClass = (rr, kpi) => { const r = toNum(rr), k = toNum(kpi); return (k > 0 ? r >= k : r > 0) ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'; };
-
-    function getBaseDaysOfData(data, year, monthIdx) {
-      const totalDaysInMonth = new Date(year, monthIdx + 1, 0).getDate();
-      if (data && data.period) {
-        const m = String(data.period).match(/(\d{1,2})\s*-\s*(\d{1,2})/);
-        if (m) {
-          const s = parseInt(m[1], 10), e = parseInt(m[2], 10);
-          if (!isNaN(s) && !isNaN(e) && e >= s) return (e - s + 1);
-        }
-      }
-      const isCurrentMonth = (year === sysToday.getFullYear() && monthIdx === sysToday.getMonth());
-      return isCurrentMonth ? Math.max(1, sysToday.getDate()) : totalDaysInMonth;
-    }
-
-    function calculateAutoRR(val) {
-      const n = toNum(val);
-      if (n <= 0) return 0;
-
-      const startD = fromDate <= toDate ? fromDate : toDate;
-      const endD = fromDate <= toDate ? toDate : fromDate;
-
-      if (startD.getFullYear() === endD.getFullYear() && startD.getMonth() === endD.getMonth()) {
-        const totalDays = new Date(startD.getFullYear(), startD.getMonth() + 1, 0).getDate();
-        const daysSelected = Math.max(1, endD.getDate() - startD.getDate() + 1);
-        return Math.round(n * (totalDays / daysSelected));
-      } else {
-        const months = getMonthsInRange(startD, endD);
-        let totalDaysInInvolvedMonths = 0, totalDaysSelected = 0;
-
-        for (let mIdx = 0; mIdx < months.length; mIdx++) {
-          const m = months[mIdx];
-          const totD = new Date(m.year, m.monthIndex + 1, 0).getDate();
-          totalDaysInInvolvedMonths += totD;
-
-          let s = 1, e = totD;
-          if (mIdx === 0) s = startD.getDate();
-          if (mIdx === months.length - 1) e = endD.getDate();
-          totalDaysSelected += Math.max(1, e - s + 1);
-        }
-
-        const factor = totalDaysSelected > 0 ? (totalDaysInInvolvedMonths / totalDaysSelected) : 1.0;
-        return Math.round(n * factor);
-      }
-    }
-
-    function getDynamicPeriodString(startD, endD) {
-      const s = startD <= endD ? startD : endD;
-      const e = startD <= endD ? endD : startD;
-      const sDayStr = String(s.getDate()).padStart(2, '0');
-      const eDayStr = String(e.getDate()).padStart(2, '0');
-      const sMonthName = fullMonthNames[s.getMonth()];
-      const eMonthName = fullMonthNames[e.getMonth()];
-
-      return s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()
-        ? `${sMonthName} ${sDayStr}-${eDayStr}, ${s.getFullYear()}`
-        : `${sMonthName} ${sDayStr}, ${s.getFullYear()} – ${eMonthName} ${eDayStr}, ${e.getFullYear()}`;
-    }
-
-    function calculateRoi(revenue, spent) {
-      const sp = toNum(spent), rev = toNum(revenue);
-      if (sp <= 0) return rev > 0 ? '+100.0%' : '0.0%';
-      const roiPercent = ((rev - sp) / sp) * 100;
-      return `${roiPercent > 0 ? '+' : ''}${roiPercent.toFixed(1)}%`;
-    }
-
-    function getRoiColorClass(revenue, spent) {
-      const sp = toNum(spent), rev = toNum(revenue);
-      if (sp <= 0) return rev > 0 ? 'text-emerald-700 font-extrabold' : 'text-slate-400 font-extrabold';
-      const roiPercent = ((rev - sp) / sp) * 100;
-      return roiPercent > 0 ? 'text-emerald-700 font-extrabold' : roiPercent < 0 ? 'text-rose-600 font-extrabold' : 'text-slate-500 font-extrabold';
+      document.getElementById('fromDateText').textContent = fmtMDY(fromDate);
+      document.getElementById('toDateText').textContent = fmtMDY(toDate);
+      const sub = document.getElementById('teamPerfSub');
+      if (sub) sub.textContent = `Pacing: ${fmtMDY(fromDate)} to ${fmtMDY(toDate)}`;
+      const title = document.getElementById('lineChartTitle');
+      if (title) title.textContent = `LEADS vs SIGNUPS vs USERS vs KPIs — ${fmtMDY(fromDate)} to ${fmtMDY(toDate)}`;
     }
 
     function toggleCal(t, e) {
@@ -460,85 +331,947 @@
       const pop = document.getElementById(t + 'Pop');
       pop.classList.toggle('hidden');
       if (!pop.classList.contains('hidden')) {
-        if (t === 'from') { fromViewYear = fromDate.getFullYear(); fromViewMonth = fromDate.getMonth(); }
-        else { toViewYear = toDate.getFullYear(); toViewMonth = toDate.getMonth(); }
-        renderDaysGrid(t);
+        const active = (t === 'from') ? fromDate : toDate;
+        if (t === 'from') {
+          fromViewYear = active.getFullYear();
+          fromViewMonth = active.getMonth();
+        } else {
+          toViewYear = active.getFullYear();
+          toViewMonth = active.getMonth();
+        }
+        renderCalGrid(t);
       }
     }
 
-    function navCalMonth(t, s, e) {
+    function navCal(t, s, e) {
       e?.stopPropagation();
-      if (t === 'from') {
-        fromViewMonth += s;
-        if (fromViewMonth < 0) { fromViewMonth = 11; fromViewYear--; }
-        else if (fromViewMonth > 11) { fromViewMonth = 0; fromViewYear++; }
-        if (fromViewYear < 2026 || (fromViewYear === 2026 && fromViewMonth < 9)) { fromViewYear = 2026; fromViewMonth = 9; }
-      } else {
-        toViewMonth += s;
-        if (toViewMonth < 0) { toViewMonth = 11; toViewYear--; }
-        else if (toViewMonth > 11) { toViewMonth = 0; toViewYear++; }
-        if (toViewYear < 2026 || (toViewYear === 2026 && toViewMonth < 9)) { toViewYear = 2026; toViewMonth = 9; }
-      }
-      renderDaysGrid(t);
+      const isFrom = (t === 'from');
+      let y = isFrom ? fromViewYear : toViewYear;
+      let m = isFrom ? fromViewMonth : toViewMonth;
+      
+      m += s;
+      if (m < 0) { m = 11; y--; }
+      else if (m > 11) { m = 0; y++; }
+      
+      if (y < 2026 || (y === 2026 && m < 6)) return;
+      if (y > today.getFullYear() || (y === today.getFullYear() && m > today.getMonth())) return;
+
+      if (isFrom) { fromViewYear = y; fromViewMonth = m; }
+      else { toViewYear = y; toViewMonth = m; }
+      renderCalGrid(t);
     }
 
-    function renderDaysGrid(t) {
+    function renderCalGrid(t) {
       const isFrom = (t === 'from');
-      const year = isFrom ? fromViewYear : toViewYear;
-      const month = isFrom ? fromViewMonth : toViewMonth;
-      const activeDate = isFrom ? fromDate : toDate;
-
-      setTxt(isFrom ? 'fromMonthYearLabel' : 'toMonthYearLabel', `${fullMonthNames[month].toUpperCase()} ${year}`);
-      const grid = document.getElementById(t + 'DaysGrid');
-      if (!grid) return;
-      grid.innerHTML = '';
-
-      const totalDays = new Date(year, month + 1, 0).getDate();
-      const firstDayIndex = new Date(year, month, 1).getDay();
-      const startOffset = (firstDayIndex + 6) % 7;
-
-      for (let i = 0; i < startOffset; i++) {
-        const blank = document.createElement('div');
-        blank.className = 'w-8 h-8';
-        grid.appendChild(blank);
-      }
-
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
-
-      for (let day = 1; day <= totalDays; day++) {
-        const dayDate = new Date(year, month, day);
-        const cell = document.createElement('button');
-        cell.type = 'button';
-        cell.textContent = day;
-
-        const isFuture = dayDate > today;
-        const isPastMin = (year < 2026 || (year === 2026 && month < 9));
-        const isDisabled = isFuture || isPastMin;
-        const isSelected = (activeDate.getFullYear() === year && activeDate.getMonth() === month && activeDate.getDate() === day);
-
-        if (isDisabled) cell.className = 'w-8 h-8 flex items-center justify-center rounded-xl text-slate-300 font-semibold cursor-not-allowed select-none';
-        else if (isSelected) cell.className = 'w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-600 text-white font-extrabold shadow-sm select-none cursor-pointer';
-        else cell.className = 'w-8 h-8 flex items-center justify-center rounded-xl text-slate-800 hover:bg-slate-100 font-bold transition select-none cursor-pointer';
-
-        if (!isDisabled) {
+      const y = isFrom ? fromViewYear : toViewYear;
+      const m = isFrom ? fromViewMonth : toViewMonth;
+      document.getElementById(t + 'MonthLabel').textContent = `${MONTHS[m].toUpperCase()} ${y}`;
+      const grid = document.getElementById(t + 'DaysGrid'); grid.innerHTML = '';
+      const startDay = (new Date(y, m, 1).getDay() + 6) % 7;
+      const days = new Date(y, m + 1, 0).getDate();
+      for (let i = 0; i < startDay; i++) grid.appendChild(document.createElement('div'));
+      
+      const active = isFrom ? fromDate : toDate, max = getSystemToday();
+      for (let d = 1; d <= days; d++) {
+        const cur = new Date(y, m, d), cell = document.createElement('div');
+        cell.className = 'py-1.5 select-none text-xs font-bold transition-all'; cell.textContent = d;
+        
+        if (cur.getTime() < MIN_SYSTEM_DATE.getTime() || cur.getTime() > max.getTime()) {
+          cell.classList.add('text-slate-300', 'cursor-not-allowed');
+        } else {
+          cell.classList.add('cursor-pointer');
+          if (cur.getTime() === new Date(active.getFullYear(), active.getMonth(), active.getDate()).getTime()) {
+            cell.classList.add('bg-[#00b074]', 'text-white', 'rounded-lg');
+          } else cell.classList.add('text-slate-700', 'hover:bg-slate-100', 'rounded');
           cell.onclick = (e) => {
             e.stopPropagation();
-            if (isFrom) {
-              fromDate = new Date(year, month, day);
-              if (fromDate > toDate) toDate = new Date(year, month, day);
-            } else {
-              toDate = new Date(year, month, day);
-              if (toDate < fromDate) fromDate = new Date(year, month, day);
+            if (isFrom) { 
+              fromDate = cur; 
+              if (fromDate > toDate) toDate = new Date(fromDate); 
+            } else { 
+              toDate = cur; 
+              if (toDate < fromDate) fromDate = new Date(toDate); 
             }
             document.getElementById(t + 'Pop').classList.add('hidden');
-            updateDatesUI();
-            loadDataForRange(fromDate, toDate);
+            updateDatesUI(); 
+            dispatchRange(fromDate, toDate);
           };
         }
         grid.appendChild(cell);
       }
-      lucide.createIcons();
+    }
+
+    async function dispatchRange(sDate, eDate) {
+      if (sDate.getFullYear() === eDate.getFullYear() && sDate.getMonth() === eDate.getMonth()) {
+        const y = sDate.getFullYear();
+        const m = sDate.getMonth();
+        const mName = MONTHS[m].toLowerCase();
+        const prefix = MONTHS[m].substring(0, 3);
+        const data = await getMonthData(y, mName);
+        return renderPeriod(data, sDate, eDate, prefix);
+      }
+
+      let curM = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
+      const endM = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
+      while (curM <= endM) {
+        const y = curM.getFullYear();
+        const mName = MONTHS[curM.getMonth()].toLowerCase();
+        await getMonthData(y, mName);
+        curM.setMonth(curM.getMonth() + 1);
+      }
+      renderMultiMonth(sDate, eDate);
+    }
+
+    function renderPeriod(data, sDate, eDate, prefix) {
+      if (!data) return renderZeroState(sDate, eDate);
+      document.getElementById('tp-header-period').textContent = `MTD - ${prefix.toUpperCase()} ${sDate.getFullYear()}`;
+      const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
+      
+      const lastDayOfMonth = fmtYMD(new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0));
+      const isFull = Boolean(data.date_range && sYMD === data.date_range.start && (eYMD === data.date_range.end || (eYMD >= data.date_range.end && eYMD <= lastDayOfMonth)));
+      
+      // Tomar exactamente los registros que vienen en el JSON dentro del rango seleccionado
+      let slice = (data.daily_series || []).filter(r => r.date && r.date >= sYMD && r.date <= eYMD);
+
+      // Si no hay datos en ese rango, evitar romper el flujo
+      if (slice.length === 0) {
+        let cur = new Date(sDate);
+        while (cur <= eDate) {
+          const k = fmtYMD(cur);
+          slice.push({ date: k, leads: 0, signups: 0, cpr: 0, users: 0, rev: 0, budget: 0 });
+          cur.setDate(cur.getDate() + 1);
+        }
+      }
+
+      const totalMonthDays = new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0).getDate();
+      const calendarDays = Math.max(Math.round((new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate()) - new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate())) / 86400000) + 1, 1);
+      const rrFactor = isFull ? 1 : (totalMonthDays / calendarDays);
+      currentRrFactor = rrFactor;
+
+      const leads = isFull ? data.totals.cpl.mtd : slice.reduce((a,r) => a + r.leads, 0);
+      const sigs = isFull ? data.totals.signups.mtd : slice.reduce((a,r) => a + r.signups, 0);
+      const cprVal = isFull ? (data.totals.cpr?.mtd || 0) : slice.reduce((a,r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
+      const users = isFull ? data.totals.cpa.mtd : slice.reduce((a,r) => a + r.users, 0);
+      const budget = isFull ? data.totals.budget : slice.reduce((a,r) => a + r.budget, 0);
+      const rev = isFull ? data.totals.revenue : Number(slice.reduce((a,r) => a + r.rev, 0).toFixed(2));
+      const profit = Number((rev - budget).toFixed(2));
+      
+      const rr = {
+        budget: isFull ? data.totals.budget : Math.round(budget * rrFactor),
+        sigs: isFull ? data.totals.signups.rr : Math.round(sigs * rrFactor),
+        users: isFull ? data.totals.cpa.rr : Math.round(users * rrFactor),
+        rev: isFull ? data.totals.revenue : Math.round(rev * rrFactor),
+        profit: isFull ? data.totals.profit : Math.round((rev - budget) * rrFactor),
+        leads: isFull ? data.totals.cpl.rr : Math.round(leads * rrFactor),
+        cpr: isFull ? Math.round(data.totals.cpr?.rr || 0) : (cprVal > 0 ? Math.round(cprVal * rrFactor) : 0)
+      };
+
+      const teamKpis = data.team_kpis || { budget: 5500, signups: 1000, users: 300, revenue: 16500, profit: 11000 };
+      const totKpis = data.totals || {};
+
+      renderKPIs({ budget, sigs, users, rev, profit, rr, roi: isFull ? data.totals.roi : null, teamKpis });
+
+      const lRatio = leads / (data.totals.cpl?.mtd || 1), sRatio = sigs / (data.totals.signups?.mtd || 1);
+      const totMonthlyCpr = data.totals.cpr?.mtd || 0;
+      const cRatio = totMonthlyCpr > 0 ? (cprVal / totMonthlyCpr) : 0;
+      const uRatio = users / (data.totals.cpa?.mtd || 1), bRatio = budget / (data.totals.budget || 1), rRatio = rev / (data.totals.revenue || 1);
+
+      let partners = (data.partners || []).map(p => {
+        const pL = isFull ? p.cplMtd : (typeof p.cplMtd === 'number' && p.cplMtd > 0 ? Math.round(p.cplMtd * lRatio) : '—');
+        const pS = isFull ? (typeof p.sigMtd === 'number' ? p.sigMtd : 0) : (typeof p.sigMtd === 'number' && p.sigMtd > 0 ? Math.round(p.sigMtd * sRatio) : 0);
+        const pU = isFull ? (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0) : (typeof p.cpaMtd === 'number' && p.cpaMtd > 0 ? Math.round(p.cpaMtd * uRatio) : 0);
+        const pB = isFull ? p.budget : Math.round((p.budget || 0) * bRatio);
+        const pR = isFull ? p.rev : Number(((p.rev || 0) * rRatio).toFixed(2));
+        const pP = Number((pR - pB).toFixed(2));
+        
+        const pCpr = isFull ? Math.round(p.cprMtd || 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 && cprVal > 0 ? Math.round(p.cprMtd * cRatio) : 0);
+        const pCprRr = isFull ? Math.round(p.cprRr || 0) : (pCpr > 0 ? Math.round(pCpr * rrFactor) : 0);
+
+        let st = 'neutral';
+        if (pP > 0 && pR > 0) st = 'working-well'; 
+        else if (pP < 0 && pB > 0) st = 'not-working'; 
+        else if ((typeof pS === 'number' && pS >= 9) || (typeof pU === 'number' && pU >= 2)) st = 'potential';
+
+        return {
+          ...p, cplMtd: pL, sigMtd: pS, cpaMtd: pU, budget: pB, rev: pR, profit: pP, status: st,
+          budgetRr: isFull ? (p.budgetRr || pB) : Math.round(pB * rrFactor),
+          cplRr: isFull ? p.cplRr : (typeof pL === 'number' ? Math.round(pL * rrFactor) : '—'),
+          sigRr: isFull ? p.sigRr : (typeof pS === 'number' ? Math.round(pS * rrFactor) : 0),
+          cpaRr: isFull ? p.cpaRr : (typeof pU === 'number' ? Math.round(pU * rrFactor) : 0),
+          cprMtd: pCpr, cprRr: pCprRr
+        };
+      });
+
+      applyEqualKpis(partners, totKpis);
+
+      renderTopCards(partners, teamKpis, rr);
+      renderLineChart(slice, prefix, { cpl: totKpis.cpl?.kpi || 4000, sigs: totKpis.signups?.kpi || 1000, users: totKpis.cpa?.kpi || 300 }, totalMonthDays);
+      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
+
+      const brandRatios = isFull ? { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 } : { sRatio, uRatio, bRatio, rRatio };
+      renderBrandsSummary(data.advertisers_brands || [], brandRatios);
+
+      renderInactive(data.inactive_partners);
+    }
+
+    function renderMultiMonth(sDate, eDate) {
+      document.getElementById('tp-header-period').textContent = 'TOTAL CONSOLIDATED';
+
+      const covered = [];
+      let curM = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
+      const endM = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
+      while (curM <= endM) {
+        const y = curM.getFullYear();
+        const mName = MONTHS[curM.getMonth()].toLowerCase();
+        const data = DATA_CACHE[getCacheKey(y, mName)];
+        if (data && !covered.includes(data)) {
+          covered.push(data);
+        }
+        curM.setMonth(curM.getMonth() + 1);
+      }
+
+      if (covered.length === 0) return renderZeroState(sDate, eDate);
+
+      const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
+      const multiSeriesMap = {};
+      covered.forEach(m => (m.daily_series || []).forEach(r => {
+        if (r.date && r.date >= sYMD && r.date <= eYMD) {
+          multiSeriesMap[r.date] = r;
+        }
+      }));
+
+      let slice = Object.values(multiSeriesMap).sort((a, b) => a.date.localeCompare(b.date)).map(r => {
+        const parts = r.date.split('-');
+        const mIdx = parseInt(parts[1], 10) - 1;
+        const mName = MONTHS[mIdx] ? MONTHS[mIdx].substring(0, 3) : '';
+        const dNum = parseInt(parts[2], 10);
+        return {
+          ...r,
+          label: r.label || `${mName} ${dNum}`
+        };
+      });
+
+      if (slice.length === 0) {
+        let cur = new Date(sDate);
+        while (cur <= eDate) {
+          const k = fmtYMD(cur), mName = MONTHS[cur.getMonth()].substring(0,3);
+          slice.push({ date: k, leads: 0, signups: 0, cpr: 0, users: 0, rev: 0, budget: 0, label: `${mName} ${cur.getDate()}` });
+          cur.setDate(cur.getDate() + 1);
+        }
+      }
+
+      const totalTargetDays = covered.reduce((a, m) => a + (m.date_range?.days || 30), 0) || 30;
+      const calendarDays = Math.max(Math.round((new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate()) - new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate())) / 86400000) + 1, 1);
+      const rrFactor = totalTargetDays / calendarDays;
+      currentRrFactor = rrFactor;
+
+      const leads = slice.reduce((a,r) => a + r.leads, 0), sigs = slice.reduce((a,r) => a + r.signups, 0);
+      const cprVal = slice.reduce((a,r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
+      const users = slice.reduce((a,r) => a + r.users, 0), budget = slice.reduce((a,r) => a + r.budget, 0);
+      const rev = Number(slice.reduce((a,r) => a + r.rev, 0).toFixed(2)), profit = Number((rev - budget).toFixed(2));
+      
+      const rr = { 
+        budget: Math.round(budget * rrFactor), 
+        sigs: Math.round(sigs * rrFactor), 
+        users: Math.round(users * rrFactor), 
+        rev: Math.round(rev * rrFactor), 
+        profit: Math.round(profit * rrFactor), 
+        leads: Math.round(leads * rrFactor),
+        cpr: cprVal > 0 ? Math.round(cprVal * rrFactor) : 0
+      };
+
+      const teamKpis = {
+        budget: covered.reduce((a,m) => a + (m.team_kpis?.budget || 5500), 0),
+        signups: covered.reduce((a,m) => a + (m.team_kpis?.signups || 1000), 0),
+        users: covered.reduce((a,m) => a + (m.team_kpis?.users || 300), 0),
+        revenue: covered.reduce((a,m) => a + (m.team_kpis?.revenue || 16500), 0),
+        profit: covered.reduce((a,m) => a + (m.team_kpis?.profit || 11000), 0)
+      };
+
+      const totKpis = {
+        cpl: { kpi: covered.reduce((a,m) => a + (m.totals?.cpl?.kpi || 4000), 0) },
+        signups: { kpi: covered.reduce((a,m) => a + (m.totals?.signups?.kpi || 1000), 0) },
+        cpr: { kpi: covered.reduce((a,m) => a + (m.totals?.cpr?.kpi || 200), 0) },
+        cpa: { kpi: covered.reduce((a,m) => a + (m.totals?.cpa?.kpi || 300), 0) }
+      };
+
+      renderKPIs({ budget, sigs, users, rev, profit, rr, teamKpis });
+
+      const totMonthlyCpr = covered.reduce((a,m) => a + (m.totals?.cpr?.mtd || 0), 0);
+      const cRatio = totMonthlyCpr > 0 ? (cprVal / totMonthlyCpr) : 0;
+
+      const pMap = {};
+      covered.forEach(m => (m.partners || []).forEach(p => {
+        if (!pMap[p.name]) pMap[p.name] = { name: p.name, model: p.model || p.type, cplMtd: 0, sigMtd: 0, cprMtd: 0, cpaMtd: 0, rev: 0, budget: 0 };
+        if (typeof p.cplMtd === 'number') pMap[p.name].cplMtd += p.cplMtd;
+        if (typeof p.sigMtd === 'number') pMap[p.name].sigMtd += p.sigMtd;
+        if (typeof p.cprMtd === 'number') pMap[p.name].cprMtd += p.cprMtd;
+        if (typeof p.cpaMtd === 'number') pMap[p.name].cpaMtd += p.cpaMtd;
+        pMap[p.name].rev += Number((p.rev || 0).toFixed(2));
+        pMap[p.name].budget += (p.budget || 0);
+      }));
+
+      let partners = Object.values(pMap).map(p => {
+        const pP = Number((p.rev - p.budget).toFixed(2));
+        let st = 'neutral'; 
+        if (pP > 0 && p.rev > 0) st = 'working-well'; 
+        else if (pP < 0 && p.budget > 0) st = 'not-working'; 
+        else if (p.sigMtd >= 9 || p.cpaMtd >= 2) st = 'potential';
+
+        const pCpr = (typeof p.cprMtd === 'number' && p.cprMtd > 0 && cprVal > 0) ? Math.round(p.cprMtd * cRatio) : 0;
+        return {
+          ...p, profit: pP, status: st,
+          budgetRr: p.budget > 0 ? Math.round(p.budget * rrFactor) : 0,
+          cplRr: p.cplMtd > 0 ? Math.round(p.cplMtd * rrFactor) : '—',
+          sigRr: p.sigMtd > 0 ? Math.round(p.sigMtd * rrFactor) : 0,
+          cpaRr: p.cpaMtd > 0 ? Math.round(p.cpaMtd * rrFactor) : 0,
+          cprMtd: pCpr,
+          cprRr: pCpr > 0 ? Math.round(pCpr * rrFactor) : 0
+        };
+      });
+
+      applyEqualKpis(partners, totKpis);
+
+      renderTopCards(partners, teamKpis, rr);
+      renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
+      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
+
+      const bMap = {};
+      covered.forEach(m => (m.advertisers_brands || []).forEach(b => {
+        const key = `${b.advertiser || ''}___${b.brand || ''}`;
+        if (!bMap[key]) {
+          bMap[key] = {
+            advertiser: b.advertiser,
+            brand: b.brand,
+            signups: 0,
+            ftd: 0,
+            revenue: 0,
+            budget: 0
+          };
+        }
+        bMap[key].signups += (b.signups || 0);
+        bMap[key].ftd += (b.ftd || 0);
+        bMap[key].revenue += Number((b.revenue || 0).toFixed(2));
+        bMap[key].budget += Number((b.budget || 0).toFixed(2));
+      }));
+
+      const multiBrands = Object.values(bMap).map(b => ({
+        ...b,
+        profit: Number((b.revenue - b.budget).toFixed(2))
+      }));
+      renderBrandsSummary(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
+
+      renderInactive(covered[covered.length - 1]?.inactive_partners || []);
+    }
+
+    function sortBrandsTable(key) {
+      if (brandsSortKey === key) {
+        brandsSortDir = (brandsSortDir === 'desc') ? 'asc' : 'desc';
+      } else {
+        brandsSortKey = key;
+        brandsSortDir = 'desc';
+      }
+
+      const tbody = document.getElementById('brandsSummaryBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.brand-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return brandsSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+      updateBrandsSortIcons();
+    }
+
+    function updateBrandsSortIcons() {
+      const keys = ['signups', 'ftd', 'revenue', 'budget', 'profit', 's2p'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-brand-${k}`);
+        if (!btn) return;
+        if (brandsSortKey === k) {
+          const icon = brandsSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    function renderBrandsSummary(brands, ratios = { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 }) {
+      const tbody = document.getElementById('brandsSummaryBody');
+      const tfoot = document.getElementById('brandsSummaryFoot');
+      if (!tbody) return;
+
+      if (!brands || brands.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-3 text-center text-slate-400 font-bold">No brand records available</td></tr>';
+        if (tfoot) tfoot.innerHTML = '';
+        return;
+      }
+
+      let totSignups = 0, totFtd = 0, totRev = 0, totBudget = 0;
+
+      const rowsHtml = brands.map(item => {
+        const s = Math.round((item.signups || 0) * (ratios.sRatio ?? 1));
+        const f = Math.round((item.ftd || 0) * (ratios.uRatio ?? 1));
+        const b = Math.round((item.budget || 0) * (ratios.bRatio ?? 1));
+        const r = Number(((item.revenue || 0) * (ratios.rRatio ?? 1)).toFixed(2));
+        const p = Number((r - b).toFixed(2));
+
+        totSignups += s;
+        totFtd += f;
+        totRev += r;
+        totBudget += b;
+
+        const rawS2p = s > 0 ? (f / s) : 0;
+        const s2p = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
+
+        const revDisplay = `$${Math.round(r).toLocaleString()}`;
+        const bDisplay = `$${Math.round(b).toLocaleString()}`;
+        const profitDisplay = (p < 0 ? '-$' : '$') + Math.round(Math.abs(p)).toLocaleString();
+        const profitColor = p < 0 ? 'text-red-custom' : (p > 0 ? 'text-green-custom' : 'text-slate-700');
+
+        return `<tr class="hover:bg-slate-50 transition-colors brand-row" 
+                    data-signups="${s}" 
+                    data-ftd="${f}" 
+                    data-revenue="${r}" 
+                    data-budget="${b}" 
+                    data-profit="${p}" 
+                    data-s2p="${rawS2p}">
+          <td class="p-2 font-bold text-left text-slate-900">${item.advertiser || '—'}</td>
+          <td class="p-2 font-semibold text-left text-slate-700">${item.brand || '—'}</td>
+          <td class="p-2 text-center font-bold text-slate-800">${s.toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-slate-900">${f.toLocaleString()}</td>
+          <td class="p-2 text-center font-bold text-slate-800">${revDisplay}</td>
+          <td class="p-2 text-center font-bold text-slate-800">${bDisplay}</td>
+          <td class="p-2 text-center font-extrabold ${profitColor}">${profitDisplay}</td>
+          <td class="p-2 text-center font-black text-purple-700">${s2p}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.innerHTML = rowsHtml;
+
+      if (brandsSortKey) {
+        const rows = Array.from(tbody.querySelectorAll('tr.brand-row'));
+        rows.sort((a, b) => {
+          const vA = parseFloat(a.dataset[brandsSortKey]) || 0;
+          const vB = parseFloat(b.dataset[brandsSortKey]) || 0;
+          return brandsSortDir === 'desc' ? vB - vA : vA - vB;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+      }
+      updateBrandsSortIcons();
+
+      const totProfit = Number((totRev - totBudget).toFixed(2));
+      const totS2p = totSignups > 0 ? ((totFtd / totSignups) * 100).toFixed(1) + '%' : '0.0%';
+      const totProfitDisplay = (totProfit < 0 ? '-$' : '$') + Math.round(Math.abs(totProfit)).toLocaleString();
+      const totProfitColor = totProfit < 0 ? 'text-red-custom' : (totProfit > 0 ? 'text-green-custom' : 'text-slate-900');
+
+      if (tfoot) {
+        tfoot.innerHTML = `<tr>
+          <td class="p-2 font-black text-left text-slate-900">Grand total</td>
+          <td class="p-2 font-extrabold text-left text-slate-500">${brands.length} Brands</td>
+          <td class="p-2 text-center font-black text-blue-900">${totSignups.toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-purple-900">${totFtd.toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-emerald-900">$${Math.round(totRev).toLocaleString()}</td>
+          <td class="p-2 text-center font-black text-sky-900">$${Math.round(totBudget).toLocaleString()}</td>
+          <td class="p-2 text-center font-black ${totProfitColor}">${totProfitDisplay}</td>
+          <td class="p-2 text-center font-black text-purple-700">${totS2p}</td>
+        </tr>`;
+      }
+    }
+
+    function applyEqualKpis(partners, totKpis) {
+      const kLeads = totKpis.cpl?.kpi || 4000;
+      const kSigs = totKpis.signups?.kpi || 1000;
+      const kCpa = totKpis.cpa?.kpi || 300;
+      const kCpr = totKpis.cpr?.kpi || 200;
+
+      const cplPartners = partners.filter(isCplPartner);
+      const sigPartners = partners.filter(p => typeof p.sigMtd === 'number' && p.sigMtd > 0);
+      const cpaPartners = partners.filter(isCpaPartner);
+      const cprPartners = partners.filter(isCprPartner);
+
+      const cplList = distributeEqual(kLeads, cplPartners.length);
+      const sigList = distributeEqual(kSigs, sigPartners.length);
+      const cpaList = distributeEqual(kCpa, cpaPartners.length);
+      const cprList = distributeEqual(kCpr, cprPartners.length);
+
+      cplPartners.forEach((p, i) => p.cplKpi = cplList[i]);
+      sigPartners.forEach((p, i) => p.sigKpi = sigList[i]);
+      cpaPartners.forEach((p, i) => p.cpaKpi = cpaList[i]);
+      cprPartners.forEach((p, i) => p.cprKpi = cprList[i]);
+
+      partners.forEach(p => {
+        if (!p.cplKpi) p.cplKpi = '—';
+        if (!p.sigKpi) p.sigKpi = '—';
+        if (!p.cpaKpi) p.cpaKpi = '—';
+        if (!p.cprKpi) p.cprKpi = '—';
+      });
+    }
+
+    function renderKPIs(d) {
+      if (d.teamKpis) {
+        document.getElementById('tp-kpi-budget').textContent = '$' + Math.round(d.teamKpis.budget).toLocaleString();
+        document.getElementById('tp-kpi-signups').textContent = d.teamKpis.signups.toLocaleString();
+        document.getElementById('tp-kpi-users').textContent = d.teamKpis.users.toLocaleString();
+        document.getElementById('tp-kpi-revenue').textContent = '$' + Math.round(d.teamKpis.revenue).toLocaleString();
+        document.getElementById('tp-kpi-profit').textContent = '$' + Math.round(d.teamKpis.profit).toLocaleString();
+      }
+      document.getElementById('tp-mtd-budget').textContent = '$' + Math.round(d.budget).toLocaleString();
+      document.getElementById('tp-mtd-signups').textContent = d.sigs.toLocaleString();
+      document.getElementById('tp-mtd-users').textContent = d.users.toLocaleString();
+      document.getElementById('tp-mtd-revenue').textContent = '$' + Math.round(d.rev).toLocaleString();
+      document.getElementById('tp-mtd-profit').textContent = (d.profit < 0 ? '-$' : '$') + Math.round(Math.abs(d.profit)).toLocaleString();
+
+      const elB = document.getElementById('tp-rr-budget');
+      elB.textContent = '$' + Math.round(d.rr.budget).toLocaleString();
+      elB.className = `${getRrColor(d.rr.budget, d.teamKpis?.budget || 5500)} font-black`;
+
+      const elS = document.getElementById('tp-rr-signups');
+      elS.textContent = d.rr.sigs.toLocaleString();
+      elS.className = `${getRrColor(d.rr.sigs, d.teamKpis?.signups || 1000)} font-black`;
+
+      const elU = document.getElementById('tp-rr-users');
+      elU.textContent = d.rr.users.toLocaleString();
+      elU.className = `${getRrColor(d.rr.users, d.teamKpis?.users || 300)} font-black`;
+
+      const elR = document.getElementById('tp-rr-revenue');
+      elR.textContent = '$' + Math.round(d.rr.rev).toLocaleString();
+      elR.className = `${getRrColor(d.rr.rev, d.teamKpis?.revenue || 16500)} font-black`;
+
+      const elP = document.getElementById('tp-rr-profit');
+      elP.textContent = (d.rr.profit < 0 ? '-$' : '$') + Math.round(Math.abs(d.rr.profit)).toLocaleString();
+      elP.className = `${getRrColor(d.rr.profit, d.teamKpis?.profit || 11000)} font-black`;
+
+      document.getElementById('tp-rr-roi').textContent = (d.budget > 0 && d.rev > 0) ? `1:${(d.rev / d.budget).toFixed(1)}` : (d.roi || '—');
+    }
+
+    // TOP METRIC CARDS CON KPI Y RR
+    function renderTopCards(partners, teamKpis = { budget: 5500, signups: 1000, users: 300, revenue: 16500, profit: 11000 }, rr = {}) {
+      const cats = [
+        { k: 'budget', t: 'BUDGET', p: '$', ic: 'wallet', c: '#f59e0b', bg: 'bg-amber-50 text-amber-800', f: p => p.budget, kpi: teamKpis.budget, rrKey: 'budget' },
+        { k: 'sigs', t: 'SIGNUPS', p: '', ic: 'check', c: '#2563eb', bg: 'bg-blue-50 text-blue-800', f: p => typeof p.sigMtd === 'number' ? p.sigMtd : 0, kpi: teamKpis.signups, rrKey: 'sigs' },
+        { k: 'users', t: 'USERS', p: '', ic: 'user', c: '#a855f7', bg: 'bg-purple-50 text-purple-900', f: p => typeof p.cpaMtd === 'number' ? p.cpaMtd : 0, kpi: teamKpis.users, rrKey: 'users' },
+        { k: 'rev', t: 'REVENUE', p: '$', ic: 'dollar-sign', c: '#00d285', bg: 'bg-emerald-50 text-emerald-800', f: p => p.rev || 0, kpi: teamKpis.revenue, rrKey: 'rev' },
+        { k: 'profit', t: 'PROFIT', p: '$', ic: 'sack-dollar', c: '#14b8a6', bg: 'bg-teal-50 text-teal-800', f: p => p.profit || 0, kpi: teamKpis.profit, rrKey: 'profit' }
+      ];
+      const grid = document.getElementById('metrics-grid'); grid.innerHTML = '';
+      cats.forEach(cat => {
+        const items = partners.map(p => ({ name: p.name, val: cat.f(p) })).filter(i => cat.k === 'profit' ? i.val !== 0 : i.val > 0).sort((a,b) => b.val - a.val);
+        const max = Math.max(...items.map(i => Math.abs(i.val)), 1);
+        const total = items.reduce((a,i) => a + i.val, 0);
+
+        const catRrVal = (rr && typeof rr[cat.rrKey] === 'number') ? rr[cat.rrKey] : Math.round(total * currentRrFactor);
+        const rrColor = getRrColor(catRrVal, cat.kpi);
+        const rrDisplay = (cat.p === '$' ? (catRrVal < 0 ? '-$' : '$') : '') + Math.round(Math.abs(catRrVal)).toLocaleString();
+
+        const col = document.createElement('div'); col.className = 'flex flex-col gap-2.5 min-w-0';
+        col.innerHTML = `
+          <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between h-[115px]">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-extrabold uppercase text-slate-500">${cat.t}</span>
+              </div>
+              <div class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style="background:${cat.c}20; color:${cat.c}"><i class="fa-solid fa-${cat.ic}"></i></div>
+            </div>
+            <div class="my-0.5 flex items-baseline gap-1"><span class="text-xl font-black text-slate-900">${cat.p === '$' ? (total < 0 ? '-$' : '$') : ''}${Math.round(Math.abs(total)).toLocaleString()}</span><span class="text-[9px] font-bold text-slate-400">TOTAL</span></div>
+            <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 border-t border-slate-100 pt-1">
+              <span>KPI: <span class="text-slate-600 font-extrabold">${cat.p}${Math.round(cat.kpi).toLocaleString()}</span></span>
+              <span>RR: <span class="${rrColor} font-black">${rrDisplay}</span></span>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border border-slate-200 flex flex-col h-[320px]">
+            <div class="${cat.bg} text-[10px] font-extrabold p-1.5 rounded-lg mb-3 text-center uppercase">${cat.t}</div>
+            <div class="overflow-y-auto flex-1 pr-1 space-y-3.5">
+              ${items.map(i => {
+                const isNeg = i.val < 0, pct = Math.max(Math.round((Math.abs(i.val) / max) * 100), 2);
+                return `<div>
+                  <div class="flex justify-between text-xs mb-1 font-bold">
+                    <span class="font-extrabold text-slate-800">${i.name}</span>
+                    <span class="font-black ${isNeg ? 'text-red-600' : 'text-slate-900'}">${cat.p === '$' ? (isNeg ? '-$' : '$') : ''}${Math.round(Math.abs(i.val)).toLocaleString()}</span>
+                  </div>
+                  <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden"><div class="h-2 rounded-full" style="width:${pct}%; background-color:${isNeg ? '#ef4444' : cat.c}"></div></div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        grid.appendChild(col);
+      });
+    }
+
+    function renderLineChart(slice, prefix, kpis = { cpl: 4000, sigs: 1000, users: 300 }, totalDays = 30) {
+      const canvas = document.getElementById('mainLineChart'); if (!canvas) return;
+      Chart.getChart(canvas)?.destroy();
+      const labels = slice.map(r => r.label || `${prefix} ${parseInt(r.date.split('-')[2])}`);
+      const dailyLeadsKpi = (kpis.cpl / totalDays).toFixed(1);
+      const dailySigsKpi = (kpis.sigs / totalDays).toFixed(1);
+      const dailyUsersKpi = (kpis.users / totalDays).toFixed(1);
+
+      new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'LEADS', data: slice.map(r => r.leads), borderColor: '#00d285', backgroundColor: '#00d285', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: 'SIGNUPS', data: slice.map(r => r.signups), borderColor: '#2563eb', backgroundColor: '#2563eb', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: 'USERS', data: slice.map(r => r.users), borderColor: '#a855f7', backgroundColor: '#a855f7', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: `KPI LEADS (${dailyLeadsKpi}/d)`, data: Array(slice.length).fill(dailyLeadsKpi), borderColor: '#00d285', borderDash: [6, 4], pointRadius: 0, fill: false },
+            { label: `KPI SIGNUPS (${dailySigsKpi}/d)`, data: Array(slice.length).fill(dailySigsKpi), borderColor: '#2563eb', borderDash: [6, 4], pointRadius: 0, fill: false },
+            { label: `KPI USERS (${dailyUsersKpi}/d)`, data: Array(slice.length).fill(dailyUsersKpi), borderColor: '#a855f7', borderDash: [6, 4], pointRadius: 0, fill: false }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { weight: 'bold', size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+      });
+    }
+
+    // ORDENAMIENTO CPA
+    function sortCpaTable(key) {
+      if (cpaSortKey === key) cpaSortDir = (cpaSortDir === 'desc') ? 'asc' : 'desc';
+      else { cpaSortKey = key; cpaSortDir = 'desc'; }
+
+      const tbody = document.getElementById('cpaTableBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.cpa-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return cpaSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+      updateCpaSortIcons();
+    }
+
+    function updateCpaSortIcons() {
+      const keys = ['budget', 'registrations', 'cpa', 'revenue', 'status'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-cpa-${k}`);
+        if (!btn) return;
+        if (cpaSortKey === k) {
+          const icon = cpaSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    // ORDENAMIENTO CPR
+    function sortCprTable(key) {
+      if (cprSortKey === key) cprSortDir = (cprSortDir === 'desc') ? 'asc' : 'desc';
+      else { cprSortKey = key; cprSortDir = 'desc'; }
+
+      const tbody = document.getElementById('cprTableBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.cpr-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return cprSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+      updateCprSortIcons();
+    }
+
+    function updateCprSortIcons() {
+      const keys = ['budget', 'cpr', 'registrations', 'users', 'revenue', 'status'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-cpr-${k}`);
+        if (!btn) return;
+        if (cprSortKey === k) {
+          const icon = cprSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    // ORDENAMIENTO CPL
+    function sortCplTable(key) {
+      if (cplSortKey === key) cplSortDir = (cplSortDir === 'desc') ? 'asc' : 'desc';
+      else { cplSortKey = key; cplSortDir = 'desc'; }
+
+      const tbody = document.getElementById('cplTableBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.cpl-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return cplSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+      updateCplSortIcons();
+    }
+
+    function updateCplSortIcons() {
+      const keys = ['budget', 'leads', 'registrations', 'users', 'revenue', 'status'];
+      keys.forEach(k => {
+        const btn = document.getElementById(`sort-cpl-${k}`);
+        if (!btn) return;
+        if (cplSortKey === k) {
+          const icon = cplSortDir === 'desc' ? 'fa-arrow-down-wide-short text-blue-600' : 'fa-arrow-up-wide-short text-blue-600';
+          btn.innerHTML = `Sort <i class="fa-solid ${icon}"></i>`;
+          btn.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        } else {
+          btn.innerHTML = `Sort <i class="fa-solid fa-sort text-slate-400"></i>`;
+          btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
+        }
+      });
+    }
+
+    // TABLAS DE DESGLOSE CON RR Y TOTALES
+    function renderBreakdownTables(partners, rrFactor = 1, totKpis = {}, teamKpis = {}) {
+      const container = document.getElementById('breakdown-tables-container');
+      const kBudget = teamKpis.budget || 5500;
+      
+      const cpa = partners.filter(isCpaPartner).sort((a,b) => {
+        const uA = typeof a.cpaMtd === 'number' ? a.cpaMtd : 0;
+        const uB = typeof b.cpaMtd === 'number' ? b.cpaMtd : 0;
+        if (uB !== uA) return uB - uA;
+        const sA = typeof a.sigMtd === 'number' ? a.sigMtd : 0;
+        const sB = typeof b.sigMtd === 'number' ? b.sigMtd : 0;
+        return sB - sA;
+      });
+
+      const cpr = partners.filter(isCprPartner).sort((a,b) => (b.cprMtd || 0) - (a.cprMtd || 0));
+      const cpl = partners.filter(isCplPartner).sort((a,b) => (b.cplMtd || 0) - (a.cplMtd || 0));
+
+      const totalRows = cpa.length + cpr.length + cpl.length;
+      const allBudgetKpis = totalRows > 0 ? distributeEqual(kBudget, totalRows) : [];
+
+      let kpiIdx = 0;
+      cpa.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
+      cpr.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
+      cpl.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
+
+      [...cpa, ...cpr, ...cpl].forEach(p => {
+        const b = p.budget || 0;
+        p._budgetRr = (typeof p.budgetRr === 'number') ? p.budgetRr : Math.round(b * rrFactor);
+        
+        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
+        p._sigRr = (typeof p.sigRr === 'number') ? p.sigRr : Math.round(sigVal * rrFactor);
+
+        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
+        p._cpaRr = (typeof p.cpaRr === 'number') ? p.cpaRr : Math.round(usersVal * rrFactor);
+
+        const cprVal = typeof p.cprMtd === 'number' ? p.cprMtd : 0;
+        p._cprRr = (typeof p.cprRr === 'number') ? p.cprRr : Math.round(cprVal * rrFactor);
+
+        const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
+        p._cplRr = (typeof p.cplRr === 'number') ? p.cplRr : (typeof p.cplMtd === 'number' ? Math.round(p.cplMtd * rrFactor) : '—');
+      });
+
+      const cpaTotBKpi = cpa.reduce((a, p) => a + (p._bKpi || 0), 0);
+      const cprTotBKpi = cpr.reduce((a, p) => a + (p._bKpi || 0), 0);
+      const cplTotBKpi = cpl.reduce((a, p) => a + (p._bKpi || 0), 0);
+
+      const renderRows = (list, type) => list.map(p => {
+        const b = p.budget || 0, bRr = p._budgetRr, r = p.rev || 0;
+        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
+        const bKpi = p._bKpi || 0;
+        const bKpiDisplay = `$${bKpi.toLocaleString()}`;
+        const badge = getStatusBadge(p.status);
+        const revDisplay = `$${Math.round(r).toLocaleString()}`;
+        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
+        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
+
+        if (type === 'CPA') { 
+          const cpaVal = usersVal;
+          const cpaRrVal = p._cpaRr;
+          const s2p = sigVal > 0 ? ((cpaVal / sigVal) * 100).toFixed(1) + '%' : '0.0%';
+
+          return `<tr class="hover:bg-slate-50 cpa-row" data-budget="${b}" data-registrations="${sigVal}" data-cpa="${cpaVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
+            <td class="p-2 font-bold">${p.name}</td>
+            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
+            <td class="text-center font-bold">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
+            <td class="text-center font-bold">${sigVal}</td>
+            <td class="text-center text-slate-500 font-bold">${p.cpaKpi || 25}</td>
+            <td class="text-center font-black">${cpaVal}</td>
+            <td class="text-center font-bold ${getRrColor(cpaRrVal, p.cpaKpi)}">${cpaRrVal}</td>
+            <td class="text-center font-bold text-purple-700">${s2p}</td>
+            <td class="text-center font-bold">${revDisplay}</td>
+            <td class="text-center font-bold">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
+          </tr>`; 
+        }
+
+        if (type === 'CPR') {
+          const cprMtdVal = typeof p.cprMtd === 'number' ? Math.round(p.cprMtd) : 0;
+          const cprRrVal = p._cprRr;
+
+          return `<tr class="hover:bg-slate-50 cpr-row" data-budget="${b}" data-cpr="${p.cprMtd||0}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
+            <td class="p-2 font-bold">${p.name}</td>
+            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
+            <td class="text-center font-bold">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
+            <td class="text-center text-slate-500 font-bold">${p.cprKpi||200}</td>
+            <td class="text-center font-black">${cprMtdVal}</td>
+            <td class="text-center font-bold ${getRrColor(cprRrVal, p.cprKpi)}">${cprRrVal}</td>
+            <td class="text-center font-bold">${sigVal}</td>
+            <td class="text-center font-bold">${usersVal}</td>
+            <td class="text-center font-bold">${revDisplay}</td>
+            <td class="text-center font-bold">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
+          </tr>`;
+        }
+
+        if (type === 'CPL') {
+          const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
+          const cplRrVal = p._cplRr;
+
+          return `<tr class="hover:bg-slate-50 cpl-row" data-budget="${b}" data-leads="${cplVal}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
+            <td class="p-2 font-bold">${p.name}</td>
+            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
+            <td class="text-center font-bold">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
+            <td class="text-center text-slate-500 font-bold">${p.cplKpi||'—'}</td>
+            <td class="text-center font-black">${cplVal}</td>
+            <td class="text-center font-black ${getRrColor(cplRrVal, p.cplKpi)}">${cplRrVal}</td>
+            <td class="text-center font-bold">${sigVal}</td>
+            <td class="text-center font-bold">${usersVal}</td>
+            <td class="text-center font-bold">${revDisplay}</td>
+            <td class="text-center font-bold">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
+          </tr>`;
+        }
+      }).join('');
+
+      const renderFoot = (list, type, totBKpi) => {
+        const b = list.reduce((a,p) => a + (p.budget || 0), 0);
+        const bRr = list.reduce((a,p) => a + (p._budgetRr || 0), 0);
+        const r = list.reduce((a,p) => a + (p.rev || 0), 0);
+        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
+        const bKpiTotDisplay = totBKpi > 0 ? `$${totBKpi.toLocaleString()}` : '$0';
+        const revTotDisplay = `$${Math.round(r).toLocaleString()}`;
+
+        const s = list.reduce((a,p) => a + (typeof p.sigMtd === 'number' ? p.sigMtd : 0), 0);
+        const u = list.reduce((a,p) => a + (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0), 0);
+
+        if (type === 'CPA') { 
+          const uRr = list.reduce((a,p) => a + (p._cpaRr || 0), 0);
+          const s2p = s > 0 ? ((u / s) * 100).toFixed(1) + '%' : '0.0%'; 
+          const aKpi = totKpis.cpa?.kpi || 300;
+          return `<tr>
+            <td class="p-2 font-black">Grand total</td>
+            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
+            <td class="text-center font-black">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
+            <td class="text-center font-black">${s}</td>
+            <td class="text-center text-slate-700 font-black">${aKpi.toLocaleString()}</td>
+            <td class="text-center font-black">${u}</td>
+            <td class="text-center font-bold ${getRrColor(uRr, aKpi)}">${uRr}</td>
+            <td class="text-center font-black text-purple-700">${s2p}</td>
+            <td class="text-center font-black">${revTotDisplay}</td>
+            <td class="text-center font-black">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
+          </tr>`; 
+        }
+
+        if (type === 'CPR') { 
+          const c = Math.round(list.reduce((a,p) => a + (p.cprMtd || 0), 0));
+          const cRr = list.reduce((a,p) => a + (p._cprRr || 0), 0); 
+          const cKpi = totKpis.cpr?.kpi || 200;
+          return `<tr>
+            <td class="p-2 font-black">Grand total</td>
+            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
+            <td class="text-center font-black">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
+            <td class="text-center text-slate-700 font-black">${cKpi.toLocaleString()}</td>
+            <td class="text-center font-black">${c}</td>
+            <td class="text-center font-bold ${getRrColor(cRr, cKpi)}">${cRr}</td>
+            <td class="text-center font-black">${s}</td>
+            <td class="text-center font-black">${u}</td>
+            <td class="text-center font-black">${revTotDisplay}</td>
+            <td class="text-center font-black">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
+          </tr>`; 
+        }
+
+        if (type === 'CPL') { 
+          const l = list.reduce((a,p) => a + (typeof p.cplMtd === 'number' ? p.cplMtd : 0), 0);
+          const lRr = list.reduce((a,p) => a + (typeof p._cplRr === 'number' ? p._cplRr : 0), 0); 
+          const lKpi = totKpis.cpl?.kpi || 4000;
+          return `<tr>
+            <td class="p-2 font-black">Grand total</td>
+            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
+            <td class="text-center font-black">$${b}</td>
+            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
+            <td class="text-center text-slate-700 font-black">${lKpi.toLocaleString()}</td>
+            <td class="text-center font-black">${l}</td>
+            <td class="text-center font-black ${getRrColor(lRr, lKpi)}">${lRr}</td>
+            <td class="text-center font-black">${s}</td>
+            <td class="text-center font-black">${u}</td>
+            <td class="text-center font-black">${revTotDisplay}</td>
+            <td class="text-center font-black">${roi}</td>
+            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
+          </tr>`; 
+        }
+      };
+
+      container.innerHTML = `
+        <!-- 1. CPA -->
+        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+          <span class="text-xs font-black uppercase text-purple-900 bg-purple-100 px-3 py-1 rounded-md">CPA</span>
+          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('budget')" id="sort-cpa-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('registrations')" id="sort-cpa-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('cpa')" id="sort-cpa-cpa" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('revenue')" id="sort-cpa-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('status')" id="sort-cpa-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th rowspan="2" class="p-1.5 bg-slate-100 align-middle">Registrations</th><th colspan="3" class="p-1.5 bg-purple-100">CPA</th><th colspan="3" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>S2P</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cpaTableBody" class="font-semibold">${renderRows(cpa, 'CPA') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpa, 'CPA', cpaTotBKpi)}</tfoot></table></div>
+        </div>
+
+        <!-- 2. CPR -->
+        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+          <span class="text-xs font-black uppercase text-amber-900 bg-amber-100 px-3 py-1 rounded-md">CPR</span>
+          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCprTable('budget')" id="sort-cpr-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCprTable('cpr')" id="sort-cpr-cpr" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('registrations')" id="sort-cpr-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('users')" id="sort-cpr-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('revenue')" id="sort-cpr-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('status')" id="sort-cpr-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-amber-100">CPR</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cprTableBody" class="font-semibold">${renderRows(cpr, 'CPR') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No active CPR records</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${cpr.length ? renderFoot(cpr, 'CPR', cprTotBKpi) : ''}</tfoot></table></div>
+        </div>
+
+        <!-- 3. CPL -->
+        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+          <span class="text-xs font-black uppercase text-sky-900 bg-sky-100 px-3 py-1 rounded-md">CPL</span>
+          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCplTable('budget')" id="sort-cpl-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCplTable('leads')" id="sort-cpl-leads" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('registrations')" id="sort-cpl-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('users')" id="sort-cpl-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('revenue')" id="sort-cpl-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('status')" id="sort-cpl-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-fuchsia-100">Leads</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cplTableBody" class="font-semibold">${renderRows(cpl, 'CPL') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpl, 'CPL', cplTotBKpi)}</tfoot></table></div>
+        </div>`;
+      
+      updateCpaSortIcons();
+      updateCprSortIcons();
+      updateCplSortIcons();
+    }
+
+    function renderInactive(list) {
+      document.getElementById('inactivePartnersBody').innerHTML = (list || []).map(n => `<tr class="hover:bg-slate-50"><td class="py-1.5 px-3">${n}</td></tr>`).join('');
+    }
+
+    function renderZeroState(sDate, eDate) {
+      document.getElementById('tp-header-period').textContent = 'MTD - NO DATA';
+      ['budget','signups','users','revenue','profit'].forEach(k => {
+        document.getElementById(`tp-mtd-${k}`).textContent = k === 'budget'||k==='revenue'||k==='profit' ? '$0' : '0';
+        document.getElementById(`tp-rr-${k}`).textContent = k === 'budget'||k==='revenue'||k==='profit' ? '$0' : '0';
+      });
+      document.getElementById('tp-rr-roi').textContent = '—';
+      document.getElementById('breakdown-tables-container').innerHTML = '';
+      renderBrandsSummary([]);
+    }
+
+    function switchTab(tab) {
+      const v1 = document.getElementById('section-v1'), v2 = document.getElementById('section-v2');
+      ['all','v1','v2'].forEach(t => document.getElementById(`tab-${t}`).className = (t === tab) ? 'px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 text-white' : 'px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200');
+      v1.style.display = (tab === 'all' || tab === 'v1') ? 'block' : 'none';
+      v2.style.display = (tab === 'all' || tab === 'v2') ? 'block' : 'none';
     }
 
     document.addEventListener('click', e => {
@@ -546,978 +1279,11 @@
       if (!e.target.closest('#toPop') && !e.target.closest('#toBtn')) document.getElementById('toPop').classList.add('hidden');
     });
 
-    function getMonthsInRange(start, end) {
-      const s = start <= end ? start : end;
-      const e = start <= end ? end : start;
-      const list = [];
-      let curr = new Date(s.getFullYear(), s.getMonth(), 1);
-      const last = new Date(e.getFullYear(), e.getMonth(), 1);
-      while (curr <= last) {
-        list.push({ year: curr.getFullYear(), monthIndex: curr.getMonth(), monthName: fullMonthNames[curr.getMonth()] });
-        curr.setMonth(curr.getMonth() + 1);
-      }
-      return list;
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadAllJSONs);
+    } else {
+      loadAllJSONs();
     }
-
-    function distributeKpisToCampaigns() {
-      if (!appData || !appData.campaigns || !appData.kpis) return;
-      const allCamps = appData.campaigns;
-      const bPer = Math.round(toNum(appData.kpis.budget) / (allCamps.length || 1));
-      allCamps.forEach(c => { c.budget = bPer; });
-    }
-
-    function createEmptyMonth(mName, year) {
-      return { 
-        period: getDynamicPeriodString(fromDate, toDate), 
-        kpis: { budget: 0, signups: 0, users: 0, revenue: 0, profit: 0 }, 
-        campaigns: [] 
-      };
-    }
-
-    function addCampaign(platform) {
-      if (!isEditingAllowed()) { alert("Editing is disabled for this date range."); return; }
-      if (!appData) appData = createEmptyMonth(currentLoadedMonth, currentLoadedYear);
-      const newCamp = {
-        id: `camp_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
-        name: `New Campaign`, platform, highlight: false,
-        budget: 0, spent: 0, rrBudget: 0, dailyBudget: 0, impKpi: 0, impMtd: 0, impRr: 0,
-        productViews: 0, v2p: 0, clicksKpi: 0, clicksMtd: 0, clicksRr: 0, ctr: "0.0%",
-        regKpi: 0, regMtd: 0, regRr: 0, usersFtp: 0, usersMtd: 0, usersRr: 0, s2p: "0.0%", revenue: 0, roi: "0.0%",
-        takeaways: "", lessons: "", improvements: ""
-      };
-      appData.campaigns.push(newCamp);
-      if (rawMonthData && rawMonthData.campaigns) rawMonthData.campaigns.push({ ...newCamp });
-      distributeKpisToCampaigns();
-      renderDashboard();
-      showSaveToast(`Added campaign to ${platform.toUpperCase()}. Click "Save to Git" to commit.`);
-    }
-
-    function deleteCampaign(id, e) {
-      e?.stopPropagation();
-      if (!isEditingAllowed()) { alert("Editing is disabled for this date range."); return; }
-      if (!confirm("Delete this campaign?")) return;
-      appData.campaigns = (appData.campaigns || []).filter(c => String(c.id) !== String(id));
-      if (rawMonthData && rawMonthData.campaigns) rawMonthData.campaigns = rawMonthData.campaigns.filter(c => String(c.id) !== String(id));
-      distributeKpisToCampaigns();
-      renderDashboard();
-      showSaveToast('Campaign removed. Click "Save to Git" to commit.');
-    }
-
-    function showSaveToast(text) {
-      const t = document.getElementById('saveToast');
-      setTxt('saveToastText', text);
-      if (t) {
-        t.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
-        setTimeout(() => t.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none'), 3500);
-      }
-    }
-
-    function getCleanData() {
-      distributeKpisToCampaigns();
-      return {
-        period: appData.period,
-        kpis: appData.kpis,
-        campaigns: (appData.campaigns || []).map(c => { const o = { ...c }; delete o.id; return o; })
-      };
-    }
-
-    function validateSaveAllowed() {
-      if (!isEditingAllowed()) {
-        const now = new Date();
-        const endD = fromDate <= toDate ? toDate : fromDate;
-        const isCurrentMonth = (endD.getFullYear() === now.getFullYear() && endD.getMonth() === now.getMonth());
-        const totalDaysInMonth = new Date(endD.getFullYear(), endD.getMonth() + 1, 0).getDate();
-        const targetDay = isCurrentMonth ? now.getDate() : totalDaysInMonth;
-        const expectedDateStr = `${String(endD.getMonth() + 1).padStart(2, '0')}/${String(targetDay).padStart(2, '0')}/${endD.getFullYear()}`;
-        const reason = isCurrentMonth ? `today's date (${expectedDateStr}) for the current month` : `the last day of the month (${expectedDateStr}) for past months`;
-        alert(`Cannot save: Saving is only allowed from day 01 to ${reason}. Please update your selection before saving.`);
-        return false;
-      }
-      return true;
-    }
-
-    async function saveDashboardData(silentAutoCreate = false) {
-      if (!appData) return;
-      if (!silentAutoCreate) {
-        if (!validateSaveAllowed()) return;
-        if (isSaveCooldown) { showSaveToast(`⏳ Wait ${fmtCooldownTime(cooldownRemaining)} before saving again.`); return; }
-      }
-
-      const btn = document.getElementById('saveGitBtn');
-      const btnText = document.getElementById('saveGitBtnText');
-      if (!silentAutoCreate) {
-        if (btn) btn.disabled = true;
-        if (btnText) btnText.innerText = "Saving...";
-        showSaveToast("⏳ Committing to GitHub...");
-      }
-
-      const cleanData = getCleanData();
-      const jsonStr = JSON.stringify(cleanData, null, 2);
-      const relPath = `${currentLoadedYear}/${currentLoadedMonth}/data.json`;
-
-      try {
-        const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${relPath}`;
-        let sha = "";
-        
-        const getRes = await fetch(`${apiUrl}?ref=${GH_BRANCH}&t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
-        if (getRes.ok) {
-          const j = await getRes.json();
-          sha = j.sha;
-        }
-
-        const putRes = await fetch(apiUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${GITHUB_TOKEN}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json'
-          },
-          body: JSON.stringify({
-            message: silentAutoCreate ? `Auto-create ${relPath}` : `Update ${relPath} via Dashboard`,
-            content: utf8ToB64(jsonStr),
-            branch: GH_BRANCH,
-            sha: sha || undefined
-          })
-        });
-
-        if (putRes.ok) {
-          showSaveToast(silentAutoCreate ? `🆕 Created ${relPath} in GitHub!` : `✅ Saved to GitHub: ${relPath}`);
-          setLiveBadge(`Live Git (${currentLoadedMonth})`);
-          setTxt('headerPathBadge', `${relPath} ✓`);
-          if (!silentAutoCreate) startSaveCooldown(COOLDOWN_DURATION_SEC);
-        } else {
-          const err = await putRes.json();
-          if (!silentAutoCreate) {
-            if (btn) btn.disabled = false;
-            if (btnText) btnText.innerText = "Save to Git";
-            alert(`GitHub Error: ${err.message}`);
-          }
-        }
-      } catch (e) {
-        if (!silentAutoCreate) {
-          if (btn) btn.disabled = false;
-          if (btnText) btnText.innerText = "Save to Git";
-          alert("Network error while saving to GitHub.");
-        }
-      }
-    }
-
-    function setLiveBadge(label) {
-      const b = document.getElementById('liveStatusBadge');
-      if (b) b.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 inline-block animate-pulse"></span> ${label}`;
-    }
-
-    async function fetchFreshJson(year, mName) {
-      const candidates = [`${year}/${mName}/data.json`, `${mName}/data.json`];
-      let got404 = false;
-
-      for (const rel of candidates) {
-        try {
-          const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${rel}?ref=${GH_BRANCH}&t=${Date.now()}`;
-          const headers = { 'Accept': 'application/vnd.github.v3+json' };
-          if (GITHUB_TOKEN) headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
-          const res = await fetch(apiUrl, { cache: 'no-store', headers });
-          if (res.ok) {
-            const fileObj = await res.json();
-            if (fileObj && fileObj.content) return { status: 'found', data: JSON.parse(b64ToUtf8(fileObj.content)) };
-          } else if (res.status === 404) got404 = true;
-        } catch (e) {}
-      }
-
-      for (const rel of candidates) {
-        try {
-          const res = await fetch(`./${rel}?nocache=${Date.now()}`, { cache: 'no-store' });
-          if (res.ok) return { status: 'found', data: await res.json() };
-        } catch (e) {}
-      }
-
-      return { status: got404 ? 'not_found' : 'error', data: null };
-    }
-
-    async function loadDataForRange(startObj, endObj) {
-      const startD = startObj <= endObj ? startObj : endObj;
-      const endD = startObj <= endObj ? endObj : startObj;
-      const months = getMonthsInRange(startD, endD);
-
-      if (months.length === 1) {
-        const { year, monthName, monthIndex } = months[0];
-        currentLoadedYear = year;
-        currentLoadedMonth = monthName;
-        setTxt('headerPathBadge', `${year}/${monthName}/data.json`);
-
-        const currentKey = `${year}_${monthName}`;
-        if (!rawMonthData || rawMonthData._cacheKey !== currentKey) {
-          const result = await fetchFreshJson(year, monthName);
-          if (result.status === 'found' && result.data) {
-            rawMonthData = JSON.parse(JSON.stringify(result.data));
-            rawMonthData._cacheKey = currentKey;
-            setLiveBadge(`Live Git (${monthName})`);
-          } else {
-            rawMonthData = createEmptyMonth(monthName, year);
-            rawMonthData._cacheKey = currentKey;
-            setLiveBadge(`New (${monthName})`);
-            if (result.status === 'not_found' && GITHUB_TOKEN) await saveDashboardData(true);
-          }
-        }
-
-        const baseDays = getBaseDaysOfData(rawMonthData, year, monthIndex);
-        const selectedDays = Math.max(1, endD.getDate() - startD.getDate() + 1);
-        const scaleFactor = selectedDays / baseDays;
-
-        const scaledCampaigns = (rawMonthData.campaigns || []).map((c, i) => {
-          const baseSpent = toNum(c.spent);
-          const baseImp = toNum(c.impMtd);
-          const basePv = toNum(c.productViews);
-          const baseV2p = toNum(c.v2p);
-          const baseClicks = toNum(c.clicksMtd);
-          const baseReg = toNum(c.regMtd);
-          const baseUsers = toNum(c.usersMtd);
-          const baseRev = toNum(c.revenue);
-
-          const spent = Math.round(baseSpent * scaleFactor);
-          const impMtd = Math.round(baseImp * scaleFactor);
-          const productViews = Math.round(basePv * scaleFactor);
-          const v2p = Math.round(baseV2p * scaleFactor);
-          const clicksMtd = Math.round(baseClicks * scaleFactor);
-          const regMtd = Math.round(baseReg * scaleFactor);
-          const usersMtd = Math.round(baseUsers * scaleFactor);
-          const revenue = Math.round((baseRev * scaleFactor) * 100) / 100;
-          const dailyBudget = selectedDays > 0 ? Math.round(spent / selectedDays) : 0;
-
-          return {
-            ...c,
-            id: c.id || `c_${i}_${Date.now()}`,
-            budget: toNum(c.budget),
-            impKpi: toNum(c.impKpi),
-            clicksKpi: toNum(c.clicksKpi),
-            regKpi: c.regKpi !== undefined ? toNum(c.regKpi) : 0,
-            usersFtp: c.usersFtp !== undefined ? toNum(c.usersFtp) : 0,
-            spent,
-            dailyBudget,
-            impMtd,
-            productViews,
-            v2p,
-            clicksMtd,
-            regMtd,
-            usersMtd,
-            revenue,
-            rrBudget: calculateAutoRR(spent),
-            impRr: calculateAutoRR(impMtd),
-            clicksRr: calculateAutoRR(clicksMtd),
-            regRr: calculateAutoRR(regMtd),
-            usersRr: calculateAutoRR(usersMtd),
-            takeaways: c.takeaways || "",
-            lessons: c.lessons || "",
-            improvements: c.improvements || "",
-            ctr: impMtd > 0 ? ((clicksMtd / impMtd) * 100).toFixed(1) + '%' : '0.0%',
-            s2p: regMtd > 0 ? ((usersMtd / regMtd) * 100).toFixed(1) + '%' : '0.0%',
-            roi: calculateRoi(revenue, spent)
-          };
-        });
-
-        appData = {
-          period: getDynamicPeriodString(startD, endD),
-          kpis: rawMonthData.kpis || { budget: 0, signups: 0, users: 0, revenue: 0, profit: 0 },
-          campaigns: scaledCampaigns
-        };
-
-        distributeKpisToCampaigns();
-        setTxt('dateAutoInfo', appData.period);
-        renderDashboard();
-      } else {
-        setLiveBadge(`Range (${months.length} Months)`);
-        setTxt('headerPathBadge', `${months[0].year}/${months[0].monthName} – ${months[months.length-1].year}/${months[months.length-1].monthName}`);
-
-        let mergedKpis = { budget: 0, signups: 0, users: 0, revenue: 0, profit: 0 };
-        const campMap = new Map();
-        let totalDaysInInvolvedMonths = 0, totalDaysSelected = 0;
-
-        for (let mIdx = 0; mIdx < months.length; mIdx++) {
-          const m = months[mIdx];
-          const totDaysMonth = new Date(m.year, m.monthIndex + 1, 0).getDate();
-          totalDaysInInvolvedMonths += totDaysMonth;
-
-          let sDay = 1, eDay = totDaysMonth;
-          if (mIdx === 0) sDay = startD.getDate();
-          if (mIdx === months.length - 1) eDay = endD.getDate();
-
-          const selectedDaysThisMonth = Math.max(1, eDay - sDay + 1);
-          totalDaysSelected += selectedDaysThisMonth;
-
-          const res = await fetchFreshJson(m.year, m.monthName);
-          if (res.status === 'found' && res.data) {
-            const k = res.data.kpis || {};
-            mergedKpis.budget += toNum(k.budget);
-            mergedKpis.signups += toNum(k.signups);
-            mergedKpis.users += toNum(k.users);
-            mergedKpis.revenue += toNum(k.revenue);
-            mergedKpis.profit += toNum(k.profit);
-
-            const baseDaysMonth = getBaseDaysOfData(res.data, m.year, m.monthIndex);
-            const scaleFactorMonth = selectedDaysThisMonth / baseDaysMonth;
-
-            (res.data.campaigns || []).forEach(c => {
-              const key = `${(c.platform || '').toLowerCase()}__${(c.name || '').trim()}`;
-              const sSpent = toNum(c.spent) * scaleFactorMonth;
-              const sImp = toNum(c.impMtd) * scaleFactorMonth;
-              const sPv = toNum(c.productViews) * scaleFactorMonth;
-              const sV2p = toNum(c.v2p) * scaleFactorMonth;
-              const sClicks = toNum(c.clicksMtd) * scaleFactorMonth;
-              const sReg = toNum(c.regMtd) * scaleFactorMonth;
-              const sUsers = toNum(c.usersMtd) * scaleFactorMonth;
-              const sRev = toNum(c.revenue) * scaleFactorMonth;
-
-              if (!campMap.has(key)) {
-                campMap.set(key, {
-                  ...c,
-                  id: `c_agg_${key}`,
-                  budget: toNum(c.budget), impKpi: toNum(c.impKpi), clicksKpi: toNum(c.clicksKpi), regKpi: toNum(c.regKpi), usersFtp: toNum(c.usersFtp),
-                  spent: sSpent, impMtd: sImp, productViews: sPv, v2p: sV2p, clicksMtd: sClicks, regMtd: sReg, usersMtd: sUsers, revenue: sRev,
-                  takeaways: c.takeaways || "", lessons: c.lessons || "", improvements: c.improvements || ""
-                });
-              } else {
-                const ex = campMap.get(key);
-                ex.budget += toNum(c.budget); ex.impKpi += toNum(c.impKpi); ex.clicksKpi += toNum(c.clicksKpi); ex.regKpi += toNum(c.regKpi); ex.usersFtp += toNum(c.usersFtp);
-                ex.spent += sSpent; ex.impMtd += sImp; ex.productViews += sPv; ex.v2p += sV2p; ex.clicksMtd += sClicks; ex.regMtd += sReg; ex.usersMtd += sUsers; ex.revenue += sRev;
-                if (!ex.takeaways && c.takeaways) ex.takeaways = c.takeaways;
-                if (!ex.lessons && c.lessons) ex.lessons = c.lessons;
-                if (!ex.improvements && c.improvements) ex.improvements = c.improvements;
-              }
-            });
-          }
-        }
-
-        const multiMonthRrFactor = totalDaysSelected > 0 ? (totalDaysInInvolvedMonths / totalDaysSelected) : 1.0;
-        const mergedCamps = Array.from(campMap.values()).map(c => {
-          c.spent = Math.round(c.spent); c.impMtd = Math.round(c.impMtd); c.productViews = Math.round(c.productViews); c.v2p = Math.round(c.v2p);
-          c.clicksMtd = Math.round(c.clicksMtd); c.regMtd = Math.round(c.regMtd); c.usersMtd = Math.round(c.usersMtd); c.revenue = Math.round(c.revenue * 100) / 100;
-          c.dailyBudget = totalDaysSelected > 0 ? Math.round(c.spent / totalDaysSelected) : 0;
-          c.rrBudget = Math.round(c.spent * multiMonthRrFactor); c.impRr = Math.round(c.impMtd * multiMonthRrFactor);
-          c.clicksRr = Math.round(c.clicksMtd * multiMonthRrFactor); c.regRr = Math.round(c.regMtd * multiMonthRrFactor); c.usersRr = Math.round(c.usersMtd * multiMonthRrFactor);
-          c.roi = calculateRoi(c.revenue, c.spent);
-          c.ctr = c.impMtd > 0 ? ((c.clicksMtd / c.impMtd) * 100).toFixed(1) + '%' : '0.0%';
-          c.s2p = c.regMtd > 0 ? ((c.usersMtd / c.regMtd) * 100).toFixed(1) + '%' : '0.0%';
-          return c;
-        });
-
-        appData = { period: getDynamicPeriodString(startD, endD), kpis: mergedKpis, campaigns: mergedCamps };
-        setTxt('dateAutoInfo', appData.period);
-        renderDashboard();
-      }
-    }
-
-    function onKpiEdit(el, field) {
-      if (!isEditingAllowed()) { renderDashboard(); return; }
-      if (!appData) return;
-      appData.kpis[field] = toNum(el.innerText);
-      if (rawMonthData && rawMonthData.kpis) rawMonthData.kpis[field] = toNum(el.innerText);
-      distributeKpisToCampaigns();
-      renderDashboard();
-    }
-
-    function handleCellBlur(el, id, field) {
-      if (!isEditingAllowed()) { renderDashboard(); return; }
-      const c = (appData.campaigns || []).find(x => String(x.id) === String(id));
-      if (!c) return;
-      if (field === 'name') c[field] = el.innerText.trim();
-      else c[field] = toNum(el.innerText);
-
-      if (rawMonthData && rawMonthData.campaigns) {
-        const rawC = rawMonthData.campaigns.find(x => (x.name || '').trim() === (c.name || '').trim());
-        if (rawC) {
-          const sDay = Math.min(fromDate.getDate(), toDate.getDate());
-          const eDay = Math.max(fromDate.getDate(), toDate.getDate());
-          const scaleFactor = Math.max(1, eDay - sDay + 1) / getBaseDaysOfData(rawMonthData, currentLoadedYear, fullMonthNames.indexOf(currentLoadedMonth));
-          if (scaleFactor > 0 && field !== 'name') rawC[field] = Math.round(toNum(el.innerText) / scaleFactor);
-          else rawC[field] = el.innerText.trim();
-        }
-      }
-
-      c.rrBudget = calculateAutoRR(c.spent);
-      c.impRr = calculateAutoRR(c.impMtd);
-      c.clicksRr = calculateAutoRR(c.clicksMtd);
-      c.regRr = calculateAutoRR(c.regMtd);
-      c.usersRr = calculateAutoRR(c.usersMtd);
-
-      const imp = toNum(c.impMtd), clk = toNum(c.clicksMtd);
-      c.ctr = imp > 0 ? ((clk / imp) * 100).toFixed(1) + '%' : '0.0%';
-      const reg = toNum(c.regMtd), usr = toNum(c.usersMtd);
-      c.s2p = reg > 0 ? ((usr / reg) * 100).toFixed(1) + '%' : '0.0%';
-
-      distributeKpisToCampaigns();
-      renderDashboard();
-    }
-
-    function handleTakeawayBlur(el, id, field) {
-      if (!isEditingAllowed()) { renderDashboard(); return; }
-      const c = (appData.campaigns || []).find(x => String(x.id) === String(id));
-      if (!c) return;
-      c[field] = el.innerText.trim();
-      if (rawMonthData && rawMonthData.campaigns) {
-        const rawC = rawMonthData.campaigns.find(x => (x.name || '').trim() === (c.name || '').trim());
-        if (rawC) rawC[field] = el.innerText.trim();
-      }
-    }
-
-    function renderDashboard() {
-      if (!appData) return;
-      const canEdit = isEditingAllowed();
-
-      const editBadge = document.getElementById('editModeBadge');
-      if (editBadge) {
-        editBadge.className = canEdit ? 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200' : 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200';
-        editBadge.innerText = canEdit ? 'Editable' : 'View Only';
-      }
-
-      const saveBtn = document.getElementById('saveGitBtn');
-      if (saveBtn && !isSaveCooldown) {
-        saveBtn.disabled = !canEdit;
-        if (!canEdit) {
-          saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
-          saveBtn.classList.remove('hover:bg-indigo-700', 'cursor-pointer');
-        } else {
-          saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-          saveBtn.classList.add('hover:bg-indigo-700', 'cursor-pointer');
-        }
-      }
-
-      setTxt('tpKpiHeaderTitle', `KPIS ${canEdit ? '(CLICK TO EDIT TARGETS)' : '(LOCKED)'}`);
-
-      const k = appData.kpis || {};
-      const kpiClass = canEdit ? 'py-3 px-2 font-extrabold text-[13px] editable-cell' : 'py-3 px-2 font-extrabold text-[13px] readonly-cell text-slate-700';
-
-      const updateKpiCell = (id, val) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.innerText = val;
-        el.contentEditable = canEdit ? 'true' : 'false';
-        el.className = kpiClass;
-      };
-
-      updateKpiCell('tpKpiBudget', `$${toNum(k.budget).toLocaleString()}`);
-      updateKpiCell('tpKpiSignups', toNum(k.signups).toLocaleString());
-      updateKpiCell('tpKpiUsers', toNum(k.users).toLocaleString());
-      updateKpiCell('tpKpiRevenue', `$${toNum(k.revenue).toLocaleString()}`);
-      updateKpiCell('tpKpiProfit', `$${toNum(k.profit).toLocaleString()}`);
-
-      setTxt('kpiTargetBudget', `KPI: $${toNum(k.budget)}`);
-      setTxt('kpiTargetSignups', `KPI: ${toNum(k.signups)}`);
-      setTxt('kpiTargetUsers', `KPI: ${toNum(k.users)}`);
-      setTxt('kpiTargetRevenue', `KPI: $${toNum(k.revenue).toLocaleString()}`);
-      setTxt('kpiTargetProfit', `KPI: $${toNum(k.profit).toLocaleString()}`);
-
-      renderAllTables();
-      renderTakeawaysTables();
-      syncGlobalSummaries();
-      updateCharts();
-      lucide.createIcons();
-    }
-
-    function renderAllTables() {
-      const container = document.getElementById('platformsContainer');
-      container.innerHTML = '';
-      const canEdit = isEditingAllowed();
-
-      PLATFORMS.forEach(p => {
-        const camps = (appData.campaigns || []).filter(c => (c.platform || '').toLowerCase() === p.key);
-        const sum = f => camps.reduce((s, c) => s + toNum(c[f]), 0);
-        const totB = sum('budget'), totS = sum('spent'), totRRB = sum('rrBudget'), totDB = sum('dailyBudget');
-        const totImpK = sum('impKpi'), totImpM = sum('impMtd'), totImpR = sum('impRr');
-        const totPV = sum('productViews'), totV2P = sum('v2p');
-        const totCK = sum('clicksKpi'), totCM = sum('clicksMtd'), totCR = sum('clicksRr');
-        const totRK = sum('regKpi'), totRM = sum('regMtd'), totRR = sum('regRr');
-        const totUK = sum('usersFtp'), totUM = sum('usersMtd'), totUR = sum('usersRr');
-        const totRev = sum('revenue');
-
-        const card = document.createElement('div');
-        card.id = `section_${p.key}`;
-        card.className = 'space-y-2';
-        card.innerHTML = `
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="flex items-center gap-2.5">
-              <span class="w-7 h-7 rounded-lg ${p.bg} flex items-center justify-center shadow-xs">${p.icon}</span>
-              <h2 class="text-base font-bold font-display text-slate-900">${p.title}</h2>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-bold">
-              <span class="text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">Budget: $${totB.toFixed(2)}</span>
-              <span class="text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200">Spent: $${totS.toFixed(2)}</span>
-              ${canEdit ? `
-                <button onclick="addCampaign('${p.key}')" class="px-2.5 py-1 rounded-md ${p.btnBg} text-white transition flex items-center gap-1 cursor-pointer">
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Add Campaign</span>
-                </button>
-              ` : `
-                <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 flex items-center gap-1">
-                  <i data-lucide="lock" class="w-3 h-3"></i><span>View Only</span>
-                </span>
-              `}
-            </div>
-          </div>
-          <div class="glass-card rounded-xl overflow-hidden">
-            <div class="overflow-x-auto custom-scrollbar">
-              <table class="master-table min-w-[1360px]">
-                <thead>
-                  <tr>
-                    <th rowspan="2" class="bg-white sticky-col" style="min-width: 210px;">Campaign (Brand)</th>
-                    <th colspan="4" class="bg-[#D9D9D9]">BUDGET</th>
-                    <th colspan="3" class="bg-[#CFE2F3]">META VIEWS</th>
-                    <th colspan="2" class="bg-[#FFF2CC]">Product Views</th>
-                    <th colspan="4" class="bg-[#FCE5CD]">CLICKS</th>
-                    <th colspan="3" class="bg-[#D9EAD3]">REGISTRATIONS</th>
-                    <th colspan="3" class="bg-[#EAD1DC]">USERS</th>
-                    <th colspan="3" class="bg-[#C9DAF8]">PERFORMANCE</th>
-                  </tr>
-                  <tr class="text-[10px] font-bold">
-                    <th class="bg-[#E8E8E8]">Budget (KPI)</th><th class="bg-[#E8E8E8]">Spent</th><th class="bg-[#E8E8E8]">RR</th><th class="bg-[#E8E8E8]">Daily Budget</th>
-                    <th class="bg-[#DFECF7]">Imp. (KPI)</th><th class="bg-[#DFECF7]">MTD</th><th class="bg-[#DFECF7]">RR</th>
-                    <th class="bg-[#FFF6D9]">Product Views</th><th class="bg-[#FFF6D9]">V2P</th>
-                    <th class="bg-[#FDEFE0]">Clicks (KPI)</th><th class="bg-[#FDEFE0]">MTD</th><th class="bg-[#FDEFE0]">RR</th><th class="bg-[#FDEFE0]">CTR</th>
-                    <th class="bg-[#E5F1E1]">Reg (KPI)</th><th class="bg-[#E5F1E1]">MTD</th><th class="bg-[#E5F1E1]">RR</th>
-                    <th class="bg-[#F2DFE8]">Users (KPI)</th><th class="bg-[#F2DFE8]">MTD</th><th class="bg-[#F2DFE8]">RR</th>
-                    <th class="bg-[#D9E5FA]">S2P</th><th class="bg-[#D9E5FA]">Revenue</th><th class="bg-[#D9E5FA]">ROI</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${camps.length === 0 ? `<tr><td colspan="23" class="text-center py-4 text-slate-400">No campaigns for this platform</td></tr>` : camps.map(c => `
-                    <tr class="hover:brightness-95">
-                      <td class="font-bold sticky-col ${c.highlight ? 'bg-[#CFE2F3]' : 'bg-white'} p-1">
-                        <div class="relative flex items-center justify-center min-h-[26px]">
-                          <span class="${canEdit ? 'editable-cell' : 'readonly-cell'} text-center font-bold px-7 w-full truncate block" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'name')">${c.name}</span>
-                          ${canEdit ? `<button onclick="deleteCampaign('${c.id}', event)" title="Delete campaign" class="absolute right-1 text-rose-500 hover:text-rose-700 p-0.5 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>` : ''}
-                        </div>
-                      </td>
-                      <td class="col-budget font-mono font-bold readonly-cell">$${c.budget}</td>
-                      <td class="col-budget font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'spent')">$${c.spent}</td>
-                      <td class="col-budget font-mono font-bold readonly-cell ${getRrColorClass(c.rrBudget, c.budget)}">$${c.rrBudget}</td>
-                      <td class="col-budget font-mono ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'dailyBudget')">$${c.dailyBudget}</td>
-                      <td class="col-views font-mono ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'impKpi')">${toNum(c.impKpi).toLocaleString()}</td>
-                      <td class="col-views font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'impMtd')">${toNum(c.impMtd).toLocaleString()}</td>
-                      <td class="col-views font-mono readonly-cell ${getRrColorClass(c.impRr, c.impKpi)}">${toNum(c.impRr).toLocaleString()}</td>
-                      <td class="col-prod font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'productViews')">${c.productViews}</td>
-                      <td class="col-prod font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'v2p')">${c.v2p}</td>
-                      <td class="col-clicks font-mono ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'clicksKpi')">${toNum(c.clicksKpi).toLocaleString()}</td>
-                      <td class="col-clicks font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'clicksMtd')">${toNum(c.clicksMtd).toLocaleString()}</td>
-                      <td class="col-clicks font-mono readonly-cell ${getRrColorClass(c.clicksRr, c.clicksKpi)}">${toNum(c.clicksRr).toLocaleString()}</td>
-                      <td class="col-clicks font-mono font-bold readonly-cell">${c.ctr || '0.0%'}</td>
-                      <td class="col-regs font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'regKpi')">${c.regKpi !== undefined ? toNum(c.regKpi).toLocaleString() : 0}</td>
-                      <td class="col-regs font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'regMtd')">${toNum(c.regMtd).toLocaleString()}</td>
-                      <td class="col-regs font-mono readonly-cell ${getRrColorClass(c.regRr, c.regKpi)}">${toNum(c.regRr).toLocaleString()}</td>
-                      <td class="col-users font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'usersFtp')">${c.usersFtp !== undefined ? toNum(c.usersFtp).toLocaleString() : 0}</td>
-                      <td class="col-users font-mono font-bold ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'usersMtd')">${toNum(c.usersMtd).toLocaleString()}</td>
-                      <td class="col-users font-mono font-bold readonly-cell ${getRrColorClass(c.usersRr, c.usersFtp)}">${toNum(c.usersRr) > 0 ? toNum(c.usersRr).toLocaleString() : 0}</td>
-                      <td class="col-perf font-mono font-bold readonly-cell">${c.s2p || '0.0%'}</td>
-                      <td class="col-perf font-mono font-extrabold ${toNum(c.revenue) > 0 ? 'text-emerald-700' : 'text-slate-400'} ${canEdit ? 'editable-cell' : 'readonly-cell'}" contenteditable="${canEdit}" onkeydown="cellEnter(event,this)" onblur="handleCellBlur(this, '${c.id}', 'revenue')">$${toNum(c.revenue).toFixed(2)}</td>
-                      <td class="col-perf font-mono font-extrabold readonly-cell ${getRoiColorClass(c.revenue, c.spent)}">${calculateRoi(c.revenue, c.spent)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-                <tfoot>
-                  <tr class="font-black font-mono">
-                    <td class="text-center sticky-col bg-white">TOTAL ${p.key.toUpperCase()}</td>
-                    <td class="col-budget">$${Math.round(totB).toLocaleString()}</td>
-                    <td class="col-budget">$${Math.round(totS).toLocaleString()}</td>
-                    <td class="col-budget ${getRrColorClass(totRRB, totB)}">$${Math.round(totRRB).toLocaleString()}</td>
-                    <td class="col-budget">$${Math.round(totDB).toLocaleString()}</td>
-                    <td class="col-views">${totImpK.toLocaleString()}</td>
-                    <td class="col-views">${totImpM.toLocaleString()}</td>
-                    <td class="col-views ${getRrColorClass(totImpR, totImpK)}">${totImpR.toLocaleString()}</td>
-                    <td class="col-prod">${totPV.toLocaleString()}</td>
-                    <td class="col-prod">${totV2P}</td>
-                    <td class="col-clicks">${Math.round(totCK).toLocaleString()}</td>
-                    <td class="col-clicks">${totCM.toLocaleString()}</td>
-                    <td class="col-clicks ${getRrColorClass(totCR, totCK)}">${totCR.toLocaleString()}</td>
-                    <td class="col-clicks">${totImpM > 0 ? ((totCM / totImpM) * 100).toFixed(1) + '%' : '0.0%'}</td>
-                    <td class="col-regs">${totRK > 0 ? totRK.toLocaleString() : '—'}</td>
-                    <td class="col-regs">${totRM.toLocaleString()}</td>
-                    <td class="col-regs ${getRrColorClass(totRR, totRK)}">${totRR.toLocaleString()}</td>
-                    <td class="col-users">${totUK > 0 ? totUK.toLocaleString() : '—'}</td>
-                    <td class="col-users">${totUM.toLocaleString()}</td>
-                    <td class="col-users ${getRrColorClass(totUR, totUK)}">${totUR.toLocaleString()}</td>
-                    <td class="col-perf">${totRM > 0 ? ((totUM / totRM) * 100).toFixed(1) + '%' : '0.0%'}</td>
-                    <td class="col-perf text-emerald-700">$${totRev.toFixed(2)}</td>
-                    <td class="col-perf ${getRoiColorClass(totRev, totS)}">${calculateRoi(totRev, totS)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    // TABLAS TAKE AWAYS: ANCHURA ESTRICTA FIJA (table-layout: fixed) Y 2 RENGLONES PARA ESCRIBIR
-    function renderTakeawaysTables() {
-      const container = document.getElementById('takeawaysContainer');
-      if (!container) return;
-      container.innerHTML = '';
-      const canEdit = isEditingAllowed();
-
-      PLATFORMS.forEach(p => {
-        const camps = (appData.campaigns || []).filter(c => (c.platform || '').toLowerCase() === p.key);
-
-        const card = document.createElement('div');
-        card.id = `section_takeaway_${p.key}`;
-        card.className = 'space-y-2';
-        card.innerHTML = `
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="flex items-center gap-2.5">
-              <span class="w-7 h-7 rounded-lg ${p.bg} flex items-center justify-center shadow-xs">${p.icon}</span>
-              <h2 class="text-base font-bold font-display text-slate-900">${p.title} — Performance Take Aways</h2>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-bold">
-              <span class="text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">${camps.length} Campaigns</span>
-            </div>
-          </div>
-          <div class="glass-card rounded-xl overflow-hidden">
-            <div class="overflow-x-auto custom-scrollbar">
-              <table class="master-table w-full text-left" style="table-layout: fixed; width: 100%;">
-                <colgroup>
-                  <col style="width: 22%;">
-                  <col style="width: 26%;">
-                  <col style="width: 26%;">
-                  <col style="width: 26%;">
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th class="bg-white sticky-col font-extrabold text-slate-900 text-center py-2.5 px-3">
-                      Campaign<br><span class="text-[10px] font-bold text-slate-700">Name</span>
-                    </th>
-                    <th class="bg-[#D9D9D9] font-extrabold text-slate-900 text-center py-2.5 px-3">Performance Take Aways</th>
-                    <th class="bg-[#D9D9D9] font-extrabold text-slate-900 text-center py-2.5 px-3">Lessons Learned</th>
-                    <th class="bg-[#D9D9D9] font-extrabold text-slate-900 text-center py-2.5 px-3">What can be improved</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${camps.length === 0 ? `<tr><td colspan="4" class="text-center py-5 text-slate-400">No campaigns for this platform</td></tr>` : camps.map(c => `
-                    <tr class="hover:bg-slate-50/70 transition-colors">
-                      <td class="font-bold sticky-col ${c.highlight ? 'bg-[#CFE2F3]' : 'bg-white'} p-2 text-center align-middle border-r border-slate-300" style="height: 46px; overflow: hidden;">
-                        <span class="font-bold text-slate-900 block truncate" title="${c.name}">${c.name}</span>
-                      </td>
-                      <td class="bg-white text-slate-800 text-left align-top p-2 text-xs border-r border-slate-300 ${canEdit ? 'editable-cell focus:ring-1 focus:ring-blue-500' : 'readonly-cell'}"
-                          style="white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; height: 46px; max-height: 46px; line-height: 1.35; overflow-y: auto;"
-                          contenteditable="${canEdit}"
-                          onkeydown="if(event.key==='Enter'){ const lines = (this.innerText || '').split('\\n'); if(lines.length >= 2){ event.preventDefault(); this.blur(); } }"
-                          onblur="handleTakeawayBlur(this, '${c.id}', 'takeaways')">${c.takeaways || ''}</td>
-                      <td class="bg-white text-slate-800 text-left align-top p-2 text-xs border-r border-slate-300 ${canEdit ? 'editable-cell focus:ring-1 focus:ring-blue-500' : 'readonly-cell'}"
-                          style="white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; height: 46px; max-height: 46px; line-height: 1.35; overflow-y: auto;"
-                          contenteditable="${canEdit}"
-                          onkeydown="if(event.key==='Enter'){ const lines = (this.innerText || '').split('\\n'); if(lines.length >= 2){ event.preventDefault(); this.blur(); } }"
-                          onblur="handleTakeawayBlur(this, '${c.id}', 'lessons')">${c.lessons || ''}</td>
-                      <td class="bg-white text-slate-800 text-left align-top p-2 text-xs border-r border-slate-300 ${canEdit ? 'editable-cell focus:ring-1 focus:ring-blue-500' : 'readonly-cell'}"
-                          style="white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; height: 46px; max-height: 46px; line-height: 1.35; overflow-y: auto;"
-                          contenteditable="${canEdit}"
-                          onkeydown="if(event.key==='Enter'){ const lines = (this.innerText || '').split('\\n'); if(lines.length >= 2){ event.preventDefault(); this.blur(); } }"
-                          onblur="handleTakeawayBlur(this, '${c.id}', 'improvements')">${c.improvements || ''}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function syncGlobalSummaries() {
-      const all = appData.campaigns || [];
-      const sum = f => all.reduce((s, c) => s + toNum(c[f]), 0);
-
-      const totSpent = sum('spent');
-      const totRRB = sum('rrBudget');
-      const totSign = sum('regMtd');
-      const totRRSign = sum('regRr');
-      const totUsers = sum('usersMtd');
-      const totRRUsers = sum('usersRr');
-      const totRev = sum('revenue');
-
-      const totProf = totRev - totSpent;
-      const totRrRev = calculateAutoRR(totRev);
-      const totProfRr = totRrRev - totRRB;
-
-      const k = appData.kpis || {};
-      const fmtMoney = (val) => `${val < 0 ? '-$' : '$'}${Math.abs(Math.round(val)).toLocaleString()}`;
-
-      setTxt('tpMtdBudget', `$${Math.round(totSpent).toLocaleString()}`);
-      setTxt('tpMtdSignups', totSign.toLocaleString());
-      setTxt('tpMtdUsers', totUsers.toLocaleString());
-      setTxt('tpMtdRevenue', `$${Math.round(totRev).toLocaleString()}`);
-      setTxt('tpMtdProfit', fmtMoney(totProf));
-
-      setTxt('tpRrBudget', `$${Math.round(totRRB).toLocaleString()}`);
-      setTxt('tpRrSignups', totRRSign.toLocaleString());
-      setTxt('tpRrUsers', totRRUsers.toLocaleString());
-      setTxt('tpRrRevenue', `$${Math.round(totRrRev).toLocaleString()}`);
-      setTxt('tpRrProfit', fmtMoney(totProfRr));
-
-      const setRrColor = (id, rrVal, kpiVal) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const isOk = toNum(rrVal) >= toNum(kpiVal);
-        el.classList.remove('text-emerald-600', 'text-rose-600');
-        el.classList.add(isOk ? 'text-emerald-600' : 'text-rose-600');
-      };
-
-      setRrColor('tpRrBudget', totRRB, k.budget);
-      setRrColor('tpRrSignups', totRRSign, k.signups);
-      setRrColor('tpRrUsers', totRRUsers, k.users);
-      setRrColor('tpRrRevenue', totRrRev, k.revenue);
-      setRrColor('tpRrProfit', totProfRr, k.profit);
-
-      const spendVal = toNum(totRRB) > 0 ? toNum(totRRB) : toNum(totSpent);
-      const revVal = toNum(totRrRev) > 0 ? toNum(totRrRev) : toNum(totRev);
-      const ratioVal = spendVal > 0 ? (revVal / spendVal).toFixed(1) : '0.4';
-      setTxt('tpRoiRatio', `1:${ratioVal}`);
-
-      setTxt('kpiBudget', `$${Math.round(totSpent).toLocaleString()}`);
-      setTxt('kpiSignups', totSign.toLocaleString());
-      setTxt('kpiFtd', totUsers.toLocaleString());
-      setTxt('kpiRevenue', `$${Math.round(totRev).toLocaleString()}`);
-
-      setTxt('kpiProfit', fmtMoney(totProf));
-      const kpiProfitEl = document.getElementById('kpiProfit');
-      if (kpiProfitEl) {
-        kpiProfitEl.classList.remove('text-slate-900', 'text-emerald-600', 'text-rose-600');
-        kpiProfitEl.classList.add(totProf < 0 ? 'text-rose-600' : 'text-emerald-600');
-      }
-
-      const badge = (id, v, target, isCurrency = false) => {
-        const el = document.getElementById(id);
-        if (el) {
-          const numVal = toNum(v);
-          const isOk = (numVal >= toNum(target) && toNum(target) > 0);
-          el.className = `text-[11px] font-extrabold px-2 py-0.5 rounded border ${isOk ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`;
-          el.innerText = `RR: ${isCurrency ? fmtMoney(numVal) : Math.round(numVal).toLocaleString()}`;
-        }
-      };
-
-      badge('rrBudget', totRRB, k.budget, true);
-      badge('rrSignups', totRRSign, k.signups, false);
-      badge('rrFtd', totRRUsers, k.users, false);
-      badge('rrRevenue', totRrRev, k.revenue, true);
-      badge('rrProfit', totProfRr, k.profit, true);
-    }
-
-    function updateCharts() {
-      const all = appData.campaigns || [];
-      const sumP = (p, f) => all.filter(c => (c.platform || '').toLowerCase() === p).reduce((s, c) => s + toNum(c[f]), 0);
-      const mS = sumP('meta', 'spent'), mR = sumP('meta', 'revenue'), iS = sumP('instagram', 'spent'), iR = sumP('instagram', 'revenue'), xS = sumP('x', 'spent'), xR = sumP('x', 'revenue');
-      const mSign = sumP('meta', 'regMtd'), iSign = sumP('instagram', 'regMtd'), mUsr = sumP('meta', 'usersMtd'), iUsr = sumP('instagram', 'usersMtd');
-
-      setTxt('pieMetaSignups', mSign); setTxt('pieIGSignups', iSign);
-      setTxt('pieMetaUsers', mUsr); setTxt('pieIGUsers', iUsr);
-      setTxt('badgeRoiMeta', `ROI: ${calculateRoi(mR, mS)}`);
-      setTxt('badgeRoiIG', `ROI: ${calculateRoi(iR, iS)}`);
-      setTxt('badgeRoiX', `ROI: ${calculateRoi(xR, xS)}`);
-
-      if (chartSignups) chartSignups.destroy();
-      chartSignups = new Chart(document.getElementById('signupsPieChart').getContext('2d'), {
-        type: 'doughnut', data: { labels: ['Meta', 'Instagram'], datasets: [{ data: [mSign, iSign], backgroundColor: ['#0081FB', '#E1306C'] }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '65%' }
-      });
-
-      if (chartUsers) chartUsers.destroy();
-      chartUsers = new Chart(document.getElementById('usersPieChart').getContext('2d'), {
-        type: 'doughnut', data: { labels: ['Meta', 'Instagram'], datasets: [{ data: [mUsr, iUsr], backgroundColor: ['#0081FB', '#E1306C'] }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '65%' }
-      });
-
-      const miniBar = (id, s, r, ch) => {
-        if (ch) ch.destroy();
-        return new Chart(document.getElementById(id).getContext('2d'), {
-          type: 'bar', data: { labels: ['Spent', 'Revenue'], datasets: [{ data: [s, r], backgroundColor: ['#6366F1', '#10B981'], borderRadius: 4 }] },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '$' + v } } } }
-        });
-      };
-      chartMetaBR = miniBar('metaBudgetRevenueChart', mS, mR, chartMetaBR);
-      chartIGBR = miniBar('instagramBudgetRevenueChart', iS, iR, chartIGBR);
-      chartXBR = miniBar('xBudgetRevenueChart', xS, xR, chartXBR);
-    }
-
-    async function exportToExcel() {
-      if (!appData || !appData.campaigns) return;
-      distributeKpisToCampaigns();
-
-      const ARGB = {
-        border: 'FFD1D5DB', textDark: 'FF0F172A', textRed: 'FFDC2626', textGreen: 'FF15803D',
-        white: 'FFFFFFFF', highlightBlue: 'FFCFE2F3',
-        grpBudget: 'FFD9D9D9', grpViews: 'FFCFE2F3', grpProduct: 'FFFFF2CC', grpClicks: 'FFFCE5CD',
-        grpRegs: 'FFD9EAD3', grpUsers: 'FFEAD1DC', grpPerf: 'FFC9DAF8',
-        subBudget: 'FFE8E8E8', subViews: 'FFDFECF7', subProduct: 'FFFFF6D9', subClicks: 'FFFDEFE0',
-        subRegs: 'FFE5F1E1', subUsers: 'FFF2DFE8', subPerf: 'FFD9E5FA',
-        tintBudget: 'FFF4F4F4', tintViews: 'FFF0F5FA', tintProduct: 'FFFFFBEB', tintClicks: 'FFFEF6ED',
-        tintRegs: 'FFF2F8F1', tintUsers: 'FFFAF2F6', tintPerf: 'FFF3F7FE'
-      };
-
-      const thinBorder = {
-        top: { style: 'thin', color: { argb: ARGB.border } }, left: { style: 'thin', color: { argb: ARGB.border } },
-        bottom: { style: 'thin', color: { argb: ARGB.border } }, right: { style: 'thin', color: { argb: ARGB.border } }
-      };
-
-      function setCell(cell, value, bg, bold = false, color = ARGB.textDark) {
-        cell.value = value;
-        if (bg) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
-        cell.font = { name: 'Calibri', size: 10, bold, color: { argb: color } };
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        cell.border = thinBorder;
-      }
-
-      function mergeRange(ws, r1, c1, r2, c2, val, bg, bold = true, color = ARGB.textDark) {
-        ws.mergeCells(r1, c1, r2, c2);
-        for (let r = r1; r <= r2; r++) {
-          for (let c = c1; c <= c2; c++) {
-            const cell = ws.getCell(r, c);
-            if (bg) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } };
-            cell.border = thinBorder;
-          }
-        }
-        const master = ws.getCell(r1, c1);
-        master.value = val;
-        master.font = { name: 'Calibri', size: 10, bold, color: { argb: color } };
-        master.alignment = { vertical: 'middle', horizontal: 'center' };
-      }
-
-      function getRrColorArgb(rrVal, kpiVal) {
-        const rr = toNum(rrVal), kpi = toNum(kpiVal);
-        return (kpi > 0 ? rr >= kpi : rr > 0) ? ARGB.textGreen : ARGB.textRed;
-      }
-
-      function getRoiArgb(rev, sp) {
-        const s = toNum(sp), r = toNum(rev);
-        if (s <= 0) return r > 0 ? ARGB.textGreen : ARGB.textDark;
-        return ((r - s) / s) >= 0 ? ARGB.textGreen : ARGB.textRed;
-      }
-
-      const wb = new ExcelJS.Workbook();
-      wb.creator = 'WiseKapital';
-      const ws = wb.addWorksheet('Social Report', { views: [{ showGridLines: true }] });
-
-      ws.columns = [
-        { width: 28 }, { width: 14 }, { width: 12 }, { width: 12 }, { width: 14 },
-        { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 10 },
-        { width: 14 }, { width: 12 }, { width: 12 }, { width: 10 }, { width: 14 },
-        { width: 12 }, { width: 12 }, { width: 14 }, { width: 12 }, { width: 12 },
-        { width: 10 }, { width: 16 }, { width: 16 }
-      ];
-
-      function buildPlatformExcelBlock(pKey, title, bannerColor, startRow) {
-        const camps = (appData.campaigns || []).filter(c => (c.platform || '').toLowerCase() === pKey);
-        let r = startRow;
-
-        ws.mergeCells(r, 1, r, 23);
-        const tc = ws.getCell(r, 1);
-        tc.value = `${title} (${camps.length} Campaigns) — ${appData.period}`;
-        tc.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-        tc.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bannerColor } };
-        tc.alignment = { vertical: 'middle', horizontal: 'center' };
-        ws.getRow(r).height = 24;
-        r++;
-
-        const h1 = r, h2 = r + 1;
-        mergeRange(ws, h1, 1, h2, 1, 'Campaign (Brand)', ARGB.white, true);
-        mergeRange(ws, h1, 2, h1, 5, 'BUDGET', ARGB.grpBudget, true);
-        mergeRange(ws, h1, 6, h1, 8, 'META VIEWS', ARGB.grpViews, true);
-        mergeRange(ws, h1, 9, h1, 10, 'Product Views', ARGB.grpProduct, true);
-        mergeRange(ws, h1, 11, h1, 14, 'CLICKS', ARGB.grpClicks, true);
-        mergeRange(ws, h1, 15, h1, 17, 'REGISTRATIONS', ARGB.grpRegs, true);
-        mergeRange(ws, h1, 18, h1, 20, 'USERS', ARGB.grpUsers, true);
-        mergeRange(ws, h1, 21, h1, 23, 'PERFORMANCE', ARGB.grpPerf, true);
-
-        const subs = [
-          { c: 2, t: 'Budget', bg: ARGB.subBudget }, { c: 3, t: 'Spent', bg: ARGB.subBudget }, { c: 4, t: 'RR', bg: ARGB.subBudget }, { c: 5, t: 'Daily Budget', bg: ARGB.subBudget },
-          { c: 6, t: 'Imp. (KPI)', bg: ARGB.subViews }, { c: 7, t: 'MTD', bg: ARGB.subViews }, { c: 8, t: 'RR', bg: ARGB.subViews },
-          { c: 9, t: 'Product Views', bg: ARGB.subProduct }, { c: 10, t: 'V2P', bg: ARGB.subProduct },
-          { c: 11, t: 'Clicks (KPI)', bg: ARGB.subClicks }, { c: 12, t: 'MTD', bg: ARGB.subClicks }, { c: 13, t: 'RR', bg: ARGB.subClicks }, { c: 14, t: 'CTR', bg: ARGB.subClicks },
-          { c: 15, t: 'Registration', bg: ARGB.subRegs }, { c: 16, t: 'MTD', bg: ARGB.subRegs }, { c: 17, t: 'RR', bg: ARGB.subRegs },
-          { c: 18, t: 'Users (FTP)', bg: ARGB.subUsers }, { c: 19, t: 'MTD', bg: ARGB.subUsers }, { c: 20, t: 'RR', bg: ARGB.subUsers },
-          { c: 21, t: 'S2P', bg: ARGB.subPerf }, { c: 22, t: 'Revenue', bg: ARGB.subPerf }, { c: 23, t: 'ROI', bg: ARGB.subPerf }
-        ];
-        subs.forEach(s => setCell(ws.getCell(h2, s.c), s.t, s.bg, true));
-        r += 2;
-
-        camps.forEach(c => {
-          const row = ws.getRow(r);
-          row.height = 19;
-          setCell(row.getCell(1), c.name, c.highlight ? ARGB.highlightBlue : ARGB.white, true);
-          setCell(row.getCell(2), `$${Math.round(toNum(c.budget)).toLocaleString()}`, ARGB.tintBudget, true);
-          setCell(row.getCell(3), `$${Math.round(toNum(c.spent)).toLocaleString()}`, ARGB.tintBudget, true);
-          setCell(row.getCell(4), `$${Math.round(toNum(c.rrBudget)).toLocaleString()}`, ARGB.tintBudget, true, getRrColorArgb(c.rrBudget, c.budget));
-          setCell(row.getCell(5), `$${Math.round(toNum(c.dailyBudget)).toLocaleString()}`, ARGB.tintBudget);
-          setCell(row.getCell(6), Math.round(toNum(c.impKpi)).toLocaleString(), ARGB.tintViews);
-          setCell(row.getCell(7), Math.round(toNum(c.impMtd)).toLocaleString(), ARGB.tintViews, true);
-          setCell(row.getCell(8), Math.round(toNum(c.impRr)).toLocaleString(), ARGB.tintViews, true, getRrColorArgb(c.impRr, c.impKpi));
-          setCell(row.getCell(9), Math.round(toNum(c.productViews)).toLocaleString(), ARGB.tintProduct, true);
-          setCell(row.getCell(10), toNum(c.v2p).toLocaleString(), ARGB.tintProduct, true);
-          setCell(row.getCell(11), Math.round(toNum(c.clicksKpi)).toLocaleString(), ARGB.tintClicks);
-          setCell(row.getCell(12), Math.round(toNum(c.clicksMtd)).toLocaleString(), ARGB.tintClicks, true);
-          setCell(row.getCell(13), Math.round(toNum(c.clicksRr)).toLocaleString(), ARGB.tintClicks, true, getRrColorArgb(c.clicksRr, c.clicksKpi));
-          setCell(row.getCell(14), c.ctr || '0.0%', ARGB.tintClicks, true);
-          setCell(row.getCell(15), toNum(c.regKpi) > 0 ? Math.round(toNum(c.regKpi)).toLocaleString() : (c.regKpi !== undefined ? c.regKpi : '—'), ARGB.tintRegs, true);
-          setCell(row.getCell(16), Math.round(toNum(c.regMtd)).toLocaleString(), ARGB.tintRegs, true);
-          setCell(row.getCell(17), Math.round(toNum(c.regRr)).toLocaleString(), ARGB.tintRegs, true, getRrColorArgb(c.regRr, c.regKpi));
-          setCell(row.getCell(18), toNum(c.usersFtp) > 0 ? Math.round(toNum(c.usersFtp)).toLocaleString() : (c.usersFtp !== undefined ? c.usersFtp : '—'), ARGB.tintUsers, true);
-          setCell(row.getCell(19), Math.round(toNum(c.usersMtd)).toLocaleString(), ARGB.tintUsers, true);
-          setCell(row.getCell(20), toNum(c.usersRr) > 0 ? Math.round(toNum(c.usersRr)).toLocaleString() : (toNum(c.usersRr) === 0 && toNum(c.usersFtp) > 0 ? '0' : '—'), ARGB.tintUsers, true, getRrColorArgb(c.usersRr, c.usersFtp));
-          setCell(row.getCell(21), c.s2p || '0.0%', ARGB.tintPerf, true);
-          setCell(row.getCell(22), toNum(c.revenue) > 0 ? `$${toNum(c.revenue).toFixed(2)}` : '$-', ARGB.tintPerf, true, toNum(c.revenue) > 0 ? ARGB.textGreen : ARGB.textDark);
-          setCell(row.getCell(23), calculateRoi(c.revenue, c.spent), ARGB.tintPerf, true, getRoiArgb(c.revenue, c.spent));
-          r++;
-        });
-
-        const sum = f => camps.reduce((s, c) => s + toNum(c[f]), 0);
-        const fRow = ws.getRow(r);
-        fRow.height = 20;
-        setCell(fRow.getCell(1), `TOTAL ${pKey.toUpperCase()}`, ARGB.white, true);
-        setCell(fRow.getCell(2), `$${Math.round(sum('budget')).toLocaleString()}`, ARGB.tintBudget, true);
-        setCell(fRow.getCell(3), `$${Math.round(sum('spent')).toLocaleString()}`, ARGB.tintBudget, true);
-        setCell(fRow.getCell(4), `$${Math.round(sum('rrBudget')).toLocaleString()}`, ARGB.tintBudget, true, getRrColorArgb(sum('rrBudget'), sum('budget')));
-        setCell(fRow.getCell(5), `$${Math.round(sum('dailyBudget')).toLocaleString()}`, ARGB.tintBudget, true);
-        setCell(fRow.getCell(6), Math.round(sum('impKpi')).toLocaleString(), ARGB.tintViews, true);
-        setCell(fRow.getCell(7), Math.round(sum('impMtd')).toLocaleString(), ARGB.tintViews, true);
-        setCell(fRow.getCell(8), Math.round(sum('impRr')).toLocaleString(), ARGB.tintViews, true, getRrColorArgb(sum('impRr'), sum('impKpi')));
-        setCell(fRow.getCell(9), Math.round(sum('productViews')).toLocaleString(), ARGB.tintProduct, true);
-        setCell(fRow.getCell(10), Math.round(sum('v2p')).toLocaleString(), ARGB.tintProduct, true);
-        setCell(fRow.getCell(11), Math.round(sum('clicksKpi')).toLocaleString(), ARGB.tintClicks, true);
-        setCell(fRow.getCell(12), Math.round(sum('clicksMtd')).toLocaleString(), ARGB.tintClicks, true);
-        setCell(fRow.getCell(13), Math.round(sum('clicksRr')).toLocaleString(), ARGB.tintClicks, true, getRrColorArgb(sum('clicksRr'), sum('clicksKpi')));
-        setCell(fRow.getCell(14), sum('impMtd') > 0 ? ((sum('clicksMtd') / sum('impMtd')) * 100).toFixed(1) + '%' : '0.0%', ARGB.tintClicks, true);
-        setCell(fRow.getCell(15), sum('regKpi') > 0 ? Math.round(sum('regKpi')).toLocaleString() : '—', ARGB.tintRegs, true);
-        setCell(fRow.getCell(16), Math.round(sum('regMtd')).toLocaleString(), ARGB.tintRegs, true);
-        setCell(fRow.getCell(17), Math.round(sum('regRr')).toLocaleString(), ARGB.tintRegs, true, getRrColorArgb(sum('regRr'), sum('regKpi')));
-        setCell(fRow.getCell(18), sum('usersFtp') > 0 ? Math.round(sum('usersFtp')).toLocaleString() : '—', ARGB.tintUsers, true);
-        setCell(fRow.getCell(19), Math.round(sum('usersMtd')).toLocaleString(), ARGB.tintUsers, true);
-        setCell(fRow.getCell(20), sum('usersRr') > 0 ? Math.round(sum('usersRr')).toLocaleString() : (sum('usersFtp') > 0 ? '0' : '—'), ARGB.tintUsers, true, getRrColorArgb(sum('usersRr'), sum('usersFtp')));
-        setCell(fRow.getCell(21), sum('regMtd') > 0 ? ((sum('usersMtd') / sum('regMtd')) * 100).toFixed(1) + '%' : '0.0%', ARGB.tintPerf, true);
-        setCell(fRow.getCell(22), `$ ${sum('revenue').toFixed(2)}`, ARGB.tintPerf, true, ARGB.textGreen);
-        setCell(fRow.getCell(23), calculateRoi(sum('revenue'), sum('spent')), ARGB.tintPerf, true, getRoiArgb(sum('revenue'), sum('spent')));
-        r++;
-
-        return r + 1;
-      }
-
-      let currentRow = 1;
-      currentRow = buildPlatformExcelBlock('meta', 'Meta (Facebook Ads)', 'FF1D63ED', currentRow);
-      currentRow = buildPlatformExcelBlock('instagram', 'Instagram Ads', 'FFE1306C', currentRow);
-      currentRow = buildPlatformExcelBlock('x', 'X Campaigns', 'FF111827', currentRow);
-
-      const buf = await wb.xlsx.writeBuffer();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([buf]));
-      a.download = `WiseKapital_Social_Report_${currentLoadedYear}_${currentLoadedMonth}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      showSaveToast("📊 Excel exported successfully!");
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      updateDatesUI();
-      loadDataForRange(fromDate, toDate);
-      initOrResumeSaveCooldown();
-    });
   </script>
 </body>
 </html>
