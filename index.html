@@ -107,23 +107,63 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 2: 3 TABLAS DE DESGLOSE Y BRANDS SUMMARY -->
+    <!-- SECCIÓN 2: TABLAS DE DESGLOSE, NUEVA TABLA PUBLISHERS Y BRANDS SUMMARY -->
     <div id="section-v2" class="space-y-6">
-      <!-- BARRA DE CONTROL PARA EXPANDIR / COLAPSAR TODOS LOS PARTNERS -->
-      <div class="flex items-center justify-between bg-white p-3.5 px-4 rounded-2xl shadow-sm border border-slate-200">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-          <span class="text-xs font-black uppercase text-slate-800 tracking-wide">Media Partners Performance Breakdown</span>
-        </div>
-        <button type="button" id="toggleAllPartnersBtn" onclick="toggleAllPartners()" class="flex items-center gap-1.5 px-3 py-1 bg-[#40513b] hover:bg-[#32402e] text-white border border-slate-900 rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer">
-          <i id="toggleAllPartnersIcon" class="fa-solid fa-chevron-down text-[10px]"></i>
-          <span id="toggleAllPartnersText">Show All</span>
-        </button>
-      </div>
-
+      
+      <!-- 1. TABLAS CPA, CPR, CPL (ORIGINALES Y LIMPIAS) -->
       <div id="breakdown-tables-container" class="space-y-6"></div>
 
-      <!-- BRANDS SUMMARY REPORT -->
+      <!-- 2. NUEVA TABLA: PUBLISHERS BREAKDOWN REPORT (FORMATO DE TU IMAGEN) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex items-center justify-between pb-1">
+          <span class="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-700"></span>
+            PUBLISHER BREAKDOWN (BY ADVERTISER & BRAND)
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs table-grid">
+            <thead>
+              <tr class="sort-row-borderless select-none">
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('publisher')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th></th>
+                <th></th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('signups')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('ftd')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('s2p')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('revenue')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+              </tr>
+              <!-- ENCABEZADO AZUL OSCURO ESTILO CAPTURA -->
+              <tr class="bg-[#0c1938] text-white font-black text-xs uppercase tracking-wider select-none text-center">
+                <th class="p-3 text-left w-48 pl-4">PUBLISHER</th>
+                <th class="p-3 text-left">ADVERTISERS</th>
+                <th class="p-3 text-left">BRANDS</th>
+                <th class="p-3 text-center">SIGN UPS</th>
+                <th class="p-3 text-center">FTDS</th>
+                <th class="p-3 text-center">S2P</th>
+                <th class="p-3 text-center pr-4">REVENUE / PAYOUT</th>
+              </tr>
+            </thead>
+            <tbody id="publisherBreakdownBody" class="font-semibold text-slate-800 divide-y divide-slate-200">
+              <tr><td colspan="7" class="p-3 text-center text-slate-400">Loading data...</td></tr>
+            </tbody>
+            <tfoot id="publisherBreakdownFoot" class="font-black bg-slate-50 border-t-2"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3. BRANDS SUMMARY REPORT (LIMPIA) -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex items-center justify-between pb-1">
           <span class="text-xs font-black uppercase text-slate-800 tracking-wide">BRANDS SUMMARY REPORT</span>
@@ -188,7 +228,6 @@
 
   <script>
     let currentRrFactor = 1;
-    let allPartnersExpanded = false;
     const DATA_CACHE = {};
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
@@ -211,6 +250,7 @@
     let cprSortKey = null, cprSortDir = 'desc';
     let cplSortKey = null, cplSortDir = 'desc';
     let brandsSortKey = 'ftd', brandsSortDir = 'desc';
+    let pubSortKey = 'publisher', pubSortDir = 'asc';
 
     const statusWeight = {
       'working-well': 4,
@@ -431,39 +471,23 @@
       renderMultiMonth(sDate, eDate);
     }
 
-    // EXTRAER ANUNCIANTES Y MARCAS DE UN MEDIA PARTNER
-    function getPartnerAdvertisers(partnerName, brandsList) {
-      if (!partnerName || !brandsList || !Array.isArray(brandsList)) return [];
-      const results = [];
-      const pUpper = partnerName.trim().toUpperCase();
-
-      brandsList.forEach(b => {
-        const mpRaw = b.media_partners;
-        if (!mpRaw || mpRaw === '-' || typeof mpRaw !== 'string') return;
-        
-        const segments = mpRaw.split('|').map(s => s.trim()).filter(Boolean);
-        segments.forEach(seg => {
-          const match = seg.match(/^([A-Za-z0-9_-]+)\s*\((.*?)\)$/);
-          if (match) {
-            const pName = match[1].trim();
-            const details = match[2].trim();
-            if (pName.toUpperCase() === pUpper) {
-              results.push({
-                advertiser: b.advertiser || '—',
-                brand: b.brand || '—',
-                details: details
-              });
-            }
-          } else if (seg.toUpperCase().startsWith(pUpper + ' ')) {
-            results.push({
-              advertiser: b.advertiser || '—',
-              brand: b.brand || '—',
-              details: seg.replace(new RegExp('^' + partnerName + '\\s*', 'i'), '').replace(/^\(|\)$/g, '').trim()
-            });
-          }
-        });
-      });
-      return results;
+    // EXTRAER SEGMENTOS DE MEDIA PARTNERS
+    function parseMediaPartnerSegment(seg) {
+      const match = seg.match(/^([A-Za-z0-9_-]+)\s*\((.*?)\)$/);
+      if (!match) return null;
+      const publisher = match[1].trim();
+      const details = match[2].trim();
+      
+      const sMatch = details.match(/(\d+)\s*SignUps?/i);
+      const signups = sMatch ? parseInt(sMatch[1], 10) : 0;
+      
+      const fMatch = details.match(/(\d+)\s*Ftds?/i);
+      const ftd = fMatch ? parseInt(fMatch[1], 10) : 0;
+      
+      const rMatch = details.match(/\$([0-9.,]+)/);
+      const revenue = rMatch ? parseFloat(rMatch[1].replace(/,/g, '')) : 0;
+      
+      return { publisher, signups, ftd, revenue };
     }
 
     function renderPeriod(data, sDate, eDate, prefix) {
@@ -551,10 +575,11 @@
 
       renderTopCards(partners, teamKpis, rr);
       renderLineChart(slice, prefix, { cpl: totKpis.cpl?.kpi || 4000, sigs: totKpis.signups?.kpi || 1000, users: totKpis.cpa?.kpi || 300 }, totalMonthDays);
-      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis, data.advertisers_brands || []);
+      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
 
       const brandRatios = isFull ? { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 } : { sRatio, uRatio, bRatio, rRatio };
       renderBrandsSummary(data.advertisers_brands || [], brandRatios);
+      renderPublisherBreakdown(data.advertisers_brands || [], brandRatios);
 
       renderInactive(data.inactive_partners);
     }
@@ -778,80 +803,131 @@
 
       renderTopCards(partners, teamKpis, rr);
       renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
-      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis, multiBrands);
+      renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
       renderBrandsSummary(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
+      renderPublisherBreakdown(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
 
       renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
     }
 
-    // BOTÓN SHOW ALL / COLLAPSE ALL PARA MEDIA PARTNERS
-    function toggleAllPartners() {
-      allPartnersExpanded = !allPartnersExpanded;
-      const detailRows = document.querySelectorAll('tr.partner-detail-row');
-      const icons = document.querySelectorAll('[id^="icon-partner-detail-"]');
-      const btnText = document.getElementById('toggleAllPartnersText');
-      const btnIcon = document.getElementById('toggleAllPartnersIcon');
+    // RENDER NUEVA TABLA: PUBLISHERS BREAKDOWN
+    function renderPublisherBreakdown(brandsList, ratios = { sRatio: 1, uRatio: 1, rRatio: 1 }) {
+      const tbody = document.getElementById('publisherBreakdownBody');
+      const tfoot = document.getElementById('publisherBreakdownFoot');
+      if (!tbody) return;
 
-      detailRows.forEach(row => {
-        if (allPartnersExpanded) row.classList.remove('hidden');
-        else row.classList.add('hidden');
-      });
+      const flatList = [];
+      (brandsList || []).forEach(b => {
+        const mpRaw = b.media_partners;
+        if (!mpRaw || mpRaw === '-' || typeof mpRaw !== 'string') return;
+        const segments = mpRaw.split('|').map(s => s.trim()).filter(Boolean);
 
-      icons.forEach(ic => {
-        const btn = ic.closest('button');
-        if (btn && !btn.disabled) {
-          if (allPartnersExpanded) {
-            ic.classList.remove('fa-plus');
-            ic.classList.add('fa-minus');
-          } else {
-            ic.classList.remove('fa-minus');
-            ic.classList.add('fa-plus');
+        segments.forEach(seg => {
+          const parsed = parseMediaPartnerSegment(seg);
+          if (parsed) {
+            const s = Math.round(parsed.signups * (ratios.sRatio ?? 1));
+            const f = Math.round(parsed.ftd * (ratios.uRatio ?? 1));
+            const r = Number((parsed.revenue * (ratios.rRatio ?? 1)).toFixed(2));
+            const rawS2p = s > 0 ? (f / s) : 0;
+            const s2p = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
+
+            flatList.push({
+              publisher: parsed.publisher,
+              advertiser: b.advertiser || '—',
+              brand: b.brand || '—',
+              signups: s,
+              ftd: f,
+              revenue: r,
+              s2pVal: rawS2p,
+              s2pText: s2p
+            });
           }
-        }
+        });
       });
 
-      if (btnText) btnText.textContent = allPartnersExpanded ? 'Collapse All' : 'Show All';
-      if (btnIcon) btnIcon.className = allPartnersExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
-    }
+      // Ordenar por Publisher ascendente por defecto
+      flatList.sort((a, b) => {
+        const pCmp = a.publisher.localeCompare(b.publisher);
+        if (pCmp !== 0) return pCmp;
+        return b.signups - a.signups;
+      });
 
-    function updateGlobalPartnerToggleState() {
-      const detailRows = document.querySelectorAll('tr.partner-detail-row');
-      if (detailRows.length === 0) return;
-      const visibleRows = document.querySelectorAll('tr.partner-detail-row:not(.hidden)');
-
-      allPartnersExpanded = (visibleRows.length === detailRows.length);
-      const btnText = document.getElementById('toggleAllPartnersText');
-      const btnIcon = document.getElementById('toggleAllPartnersIcon');
-
-      if (btnText) btnText.textContent = allPartnersExpanded ? 'Collapse All' : 'Show All';
-      if (btnIcon) btnIcon.className = allPartnersExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
-    }
-
-    // TOGGLE MEDIA PARTNER INDIVIDUAL
-    function togglePartnerDetail(detailId, e) {
-      e?.stopPropagation();
-      const row = document.getElementById(detailId);
-      const icon = document.getElementById('icon-' + detailId);
-      if (!row) return;
-
-      const isHidden = row.classList.contains('hidden');
-      if (isHidden) {
-        row.classList.remove('hidden');
-        if (icon) {
-          icon.classList.remove('fa-plus');
-          icon.classList.add('fa-minus');
-        }
-      } else {
-        row.classList.add('hidden');
-        if (icon) {
-          icon.classList.remove('fa-minus');
-          icon.classList.add('fa-plus');
-        }
+      if (flatList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 font-bold">No publisher records available</td></tr>';
+        if (tfoot) tfoot.innerHTML = '';
+        return;
       }
-      updateGlobalPartnerToggleState();
+
+      let totSignups = 0, totFtd = 0, totRev = 0;
+
+      const rowsHtml = flatList.map(item => {
+        totSignups += item.signups;
+        totFtd += item.ftd;
+        totRev += item.revenue;
+
+        return `
+        <tr class="hover:bg-slate-50 transition-colors publisher-row"
+            data-publisher="${item.publisher}"
+            data-signups="${item.signups}"
+            data-ftd="${item.ftd}"
+            data-s2p="${item.s2pVal}"
+            data-revenue="${item.revenue}">
+          <td class="p-2.5 font-black text-left text-slate-900 pl-4">${item.publisher}</td>
+          <td class="p-2.5 font-bold text-left text-slate-800">${item.advertiser}</td>
+          <td class="p-2.5 font-semibold text-left text-slate-700">${item.brand}</td>
+          <td class="p-2.5 text-center font-black text-amber-600 text-sm">${item.signups.toLocaleString()}</td>
+          <td class="p-2.5 text-center font-black text-blue-700 text-sm">${item.ftd.toLocaleString()}</td>
+          <td class="p-2.5 text-center font-black text-purple-700">${item.s2pText}</td>
+          <td class="p-2.5 text-center font-black text-emerald-600 pr-4">$${Math.round(item.revenue).toLocaleString()}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.innerHTML = rowsHtml;
+
+      const totS2p = totSignups > 0 ? ((totFtd / totSignups) * 100).toFixed(1) + '%' : '0.0%';
+
+      if (tfoot) {
+        tfoot.innerHTML = `
+        <tr class="bg-slate-100/90 font-black border-t-2 border-slate-300">
+          <td class="p-3 text-left text-slate-900 pl-4">Grand Total</td>
+          <td colspan="2" class="p-3 text-left text-slate-500 font-extrabold">${flatList.length} Active Relationships</td>
+          <td class="p-3 text-center font-black text-amber-700 text-sm">${totSignups.toLocaleString()}</td>
+          <td class="p-3 text-center font-black text-blue-800 text-sm">${totFtd.toLocaleString()}</td>
+          <td class="p-3 text-center font-black text-purple-700">${totS2p}</td>
+          <td class="p-3 text-center font-black text-emerald-700 text-sm pr-4">$${Math.round(totRev).toLocaleString()}</td>
+        </tr>`;
+      }
     }
 
-    // ORDENAMIENTOS
+    // ORDENAMIENTO EN TABLA PUBLISHER
+    function sortPublisherTable(key) {
+      if (pubSortKey === key) {
+        pubSortDir = (pubSortDir === 'desc') ? 'asc' : 'desc';
+      } else {
+        pubSortKey = key;
+        pubSortDir = (key === 'publisher') ? 'asc' : 'desc';
+      }
+
+      const tbody = document.getElementById('publisherBreakdownBody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr.publisher-row'));
+      if (rows.length === 0) return;
+
+      rows.sort((a, b) => {
+        if (key === 'publisher') {
+          return pubSortDir === 'asc' 
+            ? a.dataset.publisher.localeCompare(b.dataset.publisher)
+            : b.dataset.publisher.localeCompare(a.dataset.publisher);
+        }
+        const vA = parseFloat(a.dataset[key]) || 0;
+        const vB = parseFloat(b.dataset[key]) || 0;
+        return pubSortDir === 'desc' ? vB - vA : vA - vB;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
+    // ORDENAMIENTOS CPA, CPR, CPL
     function sortCpaTable(key) {
       if (cpaSortKey === key) cpaSortDir = (cpaSortDir === 'desc') ? 'asc' : 'desc';
       else { cpaSortKey = key; cpaSortDir = 'desc'; }
@@ -867,13 +943,7 @@
         return cpaSortDir === 'desc' ? vB - vA : vA - vB;
       });
 
-      rows.forEach(r => {
-        tbody.appendChild(r);
-        if (r.dataset.detailId) {
-          const dRow = document.getElementById(r.dataset.detailId);
-          if (dRow) tbody.appendChild(dRow);
-        }
-      });
+      rows.forEach(r => tbody.appendChild(r));
       updateCpaSortIcons();
     }
 
@@ -908,13 +978,7 @@
         return cprSortDir === 'desc' ? vB - vA : vA - vB;
       });
 
-      rows.forEach(r => {
-        tbody.appendChild(r);
-        if (r.dataset.detailId) {
-          const dRow = document.getElementById(r.dataset.detailId);
-          if (dRow) tbody.appendChild(dRow);
-        }
-      });
+      rows.forEach(r => tbody.appendChild(r));
       updateCprSortIcons();
     }
 
@@ -949,13 +1013,7 @@
         return cplSortDir === 'desc' ? vB - vA : vA - vB;
       });
 
-      rows.forEach(r => {
-        tbody.appendChild(r);
-        if (r.dataset.detailId) {
-          const dRow = document.getElementById(r.dataset.detailId);
-          if (dRow) tbody.appendChild(dRow);
-        }
-      });
+      rows.forEach(r => tbody.appendChild(r));
       updateCplSortIcons();
     }
 
@@ -975,8 +1033,8 @@
       });
     }
 
-    // TABLAS DE DESGLOSE CON ANUNCIANTES / MARCAS EN EL '+'
-    function renderBreakdownTables(partners, rrFactor = 1, totKpis = {}, teamKpis = {}, brandsList = []) {
+    // TABLAS DE DESGLOSE (LIMPIAS)
+    function renderBreakdownTables(partners, rrFactor = 1, totKpis = {}, teamKpis = {}) {
       const container = document.getElementById('breakdown-tables-container');
       const kBudget = teamKpis.budget || 5500;
       
@@ -1021,7 +1079,7 @@
       const cprTotBKpi = cpr.reduce((a, p) => a + (p._bKpi || 0), 0);
       const cplTotBKpi = cpl.reduce((a, p) => a + (p._bKpi || 0), 0);
 
-      const renderRows = (list, type) => list.map((p, idx) => {
+      const renderRows = (list, type) => list.map(p => {
         const b = p.budget || 0, bRr = p._budgetRr, r = p.rev || 0;
         const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
         const bKpi = p._bKpi || 0;
@@ -1031,58 +1089,14 @@
         const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
         const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
 
-        const detailId = `partner-detail-${type.toLowerCase()}-${idx}`;
-        const advertisers = getPartnerAdvertisers(p.name, brandsList);
-        const hasAdv = advertisers.length > 0;
-
-        let advBadgesHtml = '';
-        if (hasAdv) {
-          advBadgesHtml = advertisers.map(adv => `
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-800 shadow-2xs">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span class="font-extrabold text-slate-900">${adv.advertiser}</span>
-              <span class="text-slate-400">›</span>
-              <span class="text-blue-700 font-semibold">${adv.brand}</span>
-              ${adv.details ? `<span class="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-semibold">(${adv.details})</span>` : ''}
-            </span>
-          `).join('');
-        } else {
-          advBadgesHtml = `<span class="text-[11px] font-semibold text-slate-400 italic">No direct brands reported for this partner</span>`;
-        }
-
-        const hiddenClass = allPartnersExpanded ? '' : 'hidden';
-        const iconClass = (allPartnersExpanded && hasAdv) ? 'fa-minus' : 'fa-plus';
-
-        const partnerCell = `
-          <td class="p-2 font-bold">
-            <div class="flex items-center justify-between gap-1.5">
-              <span>${p.name}</span>
-              <button type="button" onclick="togglePartnerDetail('${detailId}', event)" class="w-4 h-4 shrink-0 rounded flex items-center justify-center ${hasAdv ? 'bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 cursor-pointer' : 'bg-slate-50 text-slate-300 cursor-not-allowed'} transition-colors text-[9px] font-black shadow-2xs" title="${hasAdv ? 'Ver Anunciantes / Marcas' : 'Sin anunciantes'}" ${hasAdv ? '' : 'disabled'}>
-                <i id="icon-${detailId}" class="fa-solid ${iconClass}"></i>
-              </button>
-            </div>
-          </td>`;
-
-        const detailRowHtml = `
-          <tr id="${detailId}" class="${hiddenClass} bg-slate-50/90 border-y border-slate-200 partner-detail-row">
-            <td colspan="12" class="py-2.5 px-4 text-left">
-              <div class="flex flex-wrap items-center gap-2 text-xs">
-                <span class="text-[10px] font-black text-slate-500 uppercase tracking-wide flex items-center gap-1.5 shrink-0">
-                  <i class="fa-solid fa-bullhorn text-blue-600"></i> Advertisers / Brands:
-                </span>
-                ${advBadgesHtml}
-              </div>
-            </td>
-          </tr>`;
-
         if (type === 'CPA') { 
           const cpaVal = usersVal;
           const cpaRrVal = p._cpaRr;
           const s2p = sigVal > 0 ? ((cpaVal / sigVal) * 100).toFixed(1) + '%' : '0.0%';
 
           return `
-          <tr class="hover:bg-slate-50 cpa-row" data-budget="${b}" data-registrations="${sigVal}" data-cpa="${cpaVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}" data-detail-id="${detailId}">
-            ${partnerCell}
+          <tr class="hover:bg-slate-50 cpa-row" data-budget="${b}" data-registrations="${sigVal}" data-cpa="${cpaVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
+            <td class="p-2 font-bold">${p.name}</td>
             <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
             <td class="text-center font-bold">$${b}</td>
             <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
@@ -1094,8 +1108,7 @@
             <td class="text-center font-bold">${revDisplay}</td>
             <td class="text-center font-bold">${roi}</td>
             <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>
-          ${detailRowHtml}`; 
+          </tr>`; 
         }
 
         if (type === 'CPR') {
@@ -1103,8 +1116,8 @@
           const cprRrVal = p._cprRr;
 
           return `
-          <tr class="hover:bg-slate-50 cpr-row" data-budget="${b}" data-cpr="${p.cprMtd||0}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}" data-detail-id="${detailId}">
-            ${partnerCell}
+          <tr class="hover:bg-slate-50 cpr-row" data-budget="${b}" data-cpr="${p.cprMtd||0}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
+            <td class="p-2 font-bold">${p.name}</td>
             <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
             <td class="text-center font-bold">$${b}</td>
             <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
@@ -1116,8 +1129,7 @@
             <td class="text-center font-bold">${revDisplay}</td>
             <td class="text-center font-bold">${roi}</td>
             <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>
-          ${detailRowHtml}`;
+          </tr>`;
         }
 
         if (type === 'CPL') {
@@ -1125,8 +1137,8 @@
           const cplRrVal = p._cplRr;
 
           return `
-          <tr class="hover:bg-slate-50 cpl-row" data-budget="${b}" data-leads="${cplVal}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}" data-detail-id="${detailId}">
-            ${partnerCell}
+          <tr class="hover:bg-slate-50 cpl-row" data-budget="${b}" data-leads="${cplVal}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
+            <td class="p-2 font-bold">${p.name}</td>
             <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
             <td class="text-center font-bold">$${b}</td>
             <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
@@ -1138,8 +1150,7 @@
             <td class="text-center font-bold">${revDisplay}</td>
             <td class="text-center font-bold">${roi}</td>
             <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>
-          ${detailRowHtml}`;
+          </tr>`;
         }
       }).join('');
 
@@ -1520,6 +1531,7 @@
       document.getElementById('tp-rr-roi').textContent = '—';
       document.getElementById('breakdown-tables-container').innerHTML = '';
       renderBrandsSummary([]);
+      renderPublisherBreakdown([]);
     }
 
     document.addEventListener('click', e => {
