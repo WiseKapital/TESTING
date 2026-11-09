@@ -107,63 +107,13 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 2: TABLAS DE DESGLOSE, NUEVA TABLA PUBLISHERS Y BRANDS SUMMARY -->
+    <!-- SECCIÓN 2: TABLAS DE DESGLOSE, BRANDS SUMMARY Y PUBLISHERS BREAKDOWN -->
     <div id="section-v2" class="space-y-6">
       
       <!-- 1. TABLAS CPA, CPR, CPL (ORIGINALES Y LIMPIAS) -->
       <div id="breakdown-tables-container" class="space-y-6"></div>
 
-      <!-- 2. NUEVA TABLA: PUBLISHERS BREAKDOWN REPORT (FORMATO DE TU IMAGEN) -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
-        <div class="flex items-center justify-between pb-1">
-          <span class="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-blue-700"></span>
-            PUBLISHER BREAKDOWN (BY ADVERTISER & BRAND)
-          </span>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs table-grid">
-            <thead>
-              <tr class="sort-row-borderless select-none">
-                <th class="text-center">
-                  <button onclick="sortPublisherTable('publisher')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
-                </th>
-                <th></th>
-                <th></th>
-                <th class="text-center">
-                  <button onclick="sortPublisherTable('signups')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
-                </th>
-                <th class="text-center">
-                  <button onclick="sortPublisherTable('ftd')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
-                </th>
-                <th class="text-center">
-                  <button onclick="sortPublisherTable('s2p')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
-                </th>
-                <th class="text-center">
-                  <button onclick="sortPublisherTable('revenue')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
-                </th>
-              </tr>
-              <!-- ENCABEZADO AZUL OSCURO ESTILO CAPTURA -->
-              <tr class="bg-[#0c1938] text-white font-black text-xs uppercase tracking-wider select-none text-center">
-                <th class="p-3 text-left w-48 pl-4">PUBLISHER</th>
-                <th class="p-3 text-left">ADVERTISERS</th>
-                <th class="p-3 text-left">BRANDS</th>
-                <th class="p-3 text-center">SIGN UPS</th>
-                <th class="p-3 text-center">FTDS</th>
-                <th class="p-3 text-center">S2P</th>
-                <th class="p-3 text-center pr-4">REVENUE / PAYOUT</th>
-              </tr>
-            </thead>
-            <tbody id="publisherBreakdownBody" class="font-semibold text-slate-800 divide-y divide-slate-200">
-              <tr><td colspan="7" class="p-3 text-center text-slate-400">Loading data...</td></tr>
-            </tbody>
-            <tfoot id="publisherBreakdownFoot" class="font-black bg-slate-50 border-t-2"></tfoot>
-          </table>
-        </div>
-      </div>
-
-      <!-- 3. BRANDS SUMMARY REPORT (LIMPIA) -->
+      <!-- 2. BRANDS SUMMARY REPORT (LIMPIA) -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex items-center justify-between pb-1">
           <span class="text-xs font-black uppercase text-slate-800 tracking-wide">BRANDS SUMMARY REPORT</span>
@@ -212,6 +162,61 @@
           </table>
         </div>
       </div>
+
+      <!-- 3. NUEVA TABLA: PUBLISHERS BREAKDOWN REPORT (ARRIBA DE INACTIVE PARTNERS) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex items-center gap-3 pb-1">
+          <span class="text-xs font-black uppercase text-slate-800 tracking-wide flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-700"></span>
+            PUBLISHER BREAKDOWN (BY ADVERTISER & BRAND)
+          </span>
+          <button type="button" id="toggleAllPubBtn" onclick="toggleAllPubs()" class="flex items-center gap-1.5 px-3 py-1 bg-[#40513b] hover:bg-[#32402e] text-white border border-slate-900 rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer">
+            <i id="toggleAllPubIcon" class="fa-solid fa-chevron-down text-[10px]"></i>
+            <span id="toggleAllPubText">Show All</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs table-grid">
+            <thead>
+              <tr class="sort-row-borderless select-none">
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('publisher')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th></th>
+                <th></th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('signups')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('ftd')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('s2p')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+                <th class="text-center">
+                  <button onclick="sortPublisherTable('revenue')" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button>
+                </th>
+              </tr>
+              <!-- ENCABEZADO AZUL OSCURO ESTILO CAPTURA -->
+              <tr class="bg-[#0c1938] text-white font-black text-xs uppercase tracking-wider select-none text-center">
+                <th class="p-3 text-left w-52 pl-4">PUBLISHER</th>
+                <th class="p-3 text-left">ADVERTISERS</th>
+                <th class="p-3 text-left">BRANDS</th>
+                <th class="p-3 text-center">SIGN UPS</th>
+                <th class="p-3 text-center">FTDS</th>
+                <th class="p-3 text-center">S2P</th>
+                <th class="p-3 text-center pr-4">REVENUE / PAYOUT</th>
+              </tr>
+            </thead>
+            <tbody id="publisherBreakdownBody" class="font-semibold text-slate-800 divide-y divide-slate-200">
+              <tr><td colspan="7" class="p-3 text-center text-slate-400">Loading data...</td></tr>
+            </tbody>
+            <tfoot id="publisherBreakdownFoot" class="font-black bg-slate-50 border-t-2"></tfoot>
+          </table>
+        </div>
+      </div>
+
     </div>
 
     <!-- SECCIÓN 3: INACTIVE PARTNERS -->
@@ -228,6 +233,10 @@
 
   <script>
     let currentRrFactor = 1;
+    let allPubExpanded = false;
+    let currentBrandsList = [];
+    let currentBrandRatios = { sRatio: 1, uRatio: 1, rRatio: 1 };
+    
     const DATA_CACHE = {};
     const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     
@@ -554,7 +563,7 @@
         const pP = Number((pR - pB).toFixed(2));
         
         const pCpr = isFull ? Math.round(p.cprMtd || 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 && cprVal > 0 ? Math.round(p.cprMtd * cRatio) : 0);
-        const pCprRr = isFull ? Math.round(p.cprRr || 0) : (pCpr > 0 ? Math.round(pCpr * rrFactor) : 0);
+        const pCprRr = isFull ? Math.round(p.cprRr || 0) : (pCpr > 0 ? Math.round(p.cprMtd * rrFactor) : 0);
 
         let st = 'neutral';
         if (pP > 0 && pR > 0) st = 'working-well'; 
@@ -578,8 +587,11 @@
       renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
 
       const brandRatios = isFull ? { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 } : { sRatio, uRatio, bRatio, rRatio };
-      renderBrandsSummary(data.advertisers_brands || [], brandRatios);
-      renderPublisherBreakdown(data.advertisers_brands || [], brandRatios);
+      currentBrandsList = data.advertisers_brands || [];
+      currentBrandRatios = brandRatios;
+
+      renderBrandsSummary(currentBrandsList, brandRatios);
+      renderPublisherBreakdown(currentBrandsList, brandRatios);
 
       renderInactive(data.inactive_partners);
     }
@@ -801,6 +813,9 @@
         media_partners: b.media_partners.length > 0 ? Array.from(new Set(b.media_partners.join(' | ').split(' | '))).join(' | ') : '-'
       }));
 
+      currentBrandsList = multiBrands;
+      currentBrandRatios = { sRatio: 1, uRatio: 1, rRatio: 1 };
+
       renderTopCards(partners, teamKpis, rr);
       renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
       renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
@@ -810,13 +825,14 @@
       renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
     }
 
-    // RENDER NUEVA TABLA: PUBLISHERS BREAKDOWN
+    // RENDER NUEVA TABLA: PUBLISHERS BREAKDOWN AGRUPADA
     function renderPublisherBreakdown(brandsList, ratios = { sRatio: 1, uRatio: 1, rRatio: 1 }) {
       const tbody = document.getElementById('publisherBreakdownBody');
       const tfoot = document.getElementById('publisherBreakdownFoot');
       if (!tbody) return;
 
-      const flatList = [];
+      const pubMap = {};
+
       (brandsList || []).forEach(b => {
         const mpRaw = b.media_partners;
         if (!mpRaw || mpRaw === '-' || typeof mpRaw !== 'string') return;
@@ -829,74 +845,207 @@
             const f = Math.round(parsed.ftd * (ratios.uRatio ?? 1));
             const r = Number((parsed.revenue * (ratios.rRatio ?? 1)).toFixed(2));
             const rawS2p = s > 0 ? (f / s) : 0;
-            const s2p = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
+            const s2pText = s > 0 ? ((f / s) * 100).toFixed(1) + '%' : '0.0%';
 
-            flatList.push({
-              publisher: parsed.publisher,
+            if (!pubMap[parsed.publisher]) {
+              pubMap[parsed.publisher] = {
+                publisher: parsed.publisher,
+                items: [],
+                totSignups: 0,
+                totFtd: 0,
+                totRev: 0,
+                advertisersSet: new Set()
+              };
+            }
+
+            pubMap[parsed.publisher].items.push({
               advertiser: b.advertiser || '—',
               brand: b.brand || '—',
               signups: s,
               ftd: f,
               revenue: r,
               s2pVal: rawS2p,
-              s2pText: s2p
+              s2pText: s2pText
             });
+
+            pubMap[parsed.publisher].totSignups += s;
+            pubMap[parsed.publisher].totFtd += f;
+            pubMap[parsed.publisher].totRev += r;
+            if (b.advertiser) pubMap[parsed.publisher].advertisersSet.add(b.advertiser);
           }
         });
       });
 
-      // Ordenar por Publisher ascendente por defecto
-      flatList.sort((a, b) => {
-        const pCmp = a.publisher.localeCompare(b.publisher);
-        if (pCmp !== 0) return pCmp;
-        return b.signups - a.signups;
-      });
+      const pubGroups = Object.values(pubMap);
 
-      if (flatList.length === 0) {
+      if (pubGroups.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400 font-bold">No publisher records available</td></tr>';
         if (tfoot) tfoot.innerHTML = '';
         return;
       }
 
-      let totSignups = 0, totFtd = 0, totRev = 0;
+      pubGroups.forEach(g => {
+        g.rawS2p = g.totSignups > 0 ? (g.totFtd / g.totSignups) : 0;
+        g.s2pText = g.totSignups > 0 ? ((g.totFtd / g.totSignups) * 100).toFixed(1) + '%' : '0.0%';
+        g.items.sort((a, b) => b.signups - a.signups);
+      });
 
-      const rowsHtml = flatList.map(item => {
-        totSignups += item.signups;
-        totFtd += item.ftd;
-        totRev += item.revenue;
+      pubGroups.sort((a, b) => {
+        if (pubSortKey === 'publisher') {
+          return pubSortDir === 'asc' ? a.publisher.localeCompare(b.publisher) : b.publisher.localeCompare(a.publisher);
+        }
+        if (pubSortKey === 'signups') {
+          return pubSortDir === 'desc' ? b.totSignups - a.totSignups : a.totSignups - b.totSignups;
+        }
+        if (pubSortKey === 'ftd') {
+          return pubSortDir === 'desc' ? b.totFtd - a.totFtd : a.totFtd - b.totFtd;
+        }
+        if (pubSortKey === 's2p') {
+          return pubSortDir === 'desc' ? b.rawS2p - a.rawS2p : a.rawS2p - b.rawS2p;
+        }
+        if (pubSortKey === 'revenue') {
+          return pubSortDir === 'desc' ? b.totRev - a.totRev : a.totRev - b.totRev;
+        }
+        return a.publisher.localeCompare(b.publisher);
+      });
 
-        return `
-        <tr class="hover:bg-slate-50 transition-colors publisher-row"
-            data-publisher="${item.publisher}"
-            data-signups="${item.signups}"
-            data-ftd="${item.ftd}"
-            data-s2p="${item.s2pVal}"
-            data-revenue="${item.revenue}">
-          <td class="p-2.5 font-black text-left text-slate-900 pl-4">${item.publisher}</td>
-          <td class="p-2.5 font-bold text-left text-slate-800">${item.advertiser}</td>
-          <td class="p-2.5 font-semibold text-left text-slate-700">${item.brand}</td>
-          <td class="p-2.5 text-center font-black text-amber-600 text-sm">${item.signups.toLocaleString()}</td>
-          <td class="p-2.5 text-center font-black text-blue-700 text-sm">${item.ftd.toLocaleString()}</td>
-          <td class="p-2.5 text-center font-black text-purple-700">${item.s2pText}</td>
-          <td class="p-2.5 text-center font-black text-emerald-600 pr-4">$${Math.round(item.revenue).toLocaleString()}</td>
-        </tr>`;
+      let grandSignups = 0, grandFtd = 0, grandRev = 0, grandChildCount = 0;
+
+      const rowsHtml = pubGroups.map((group, gIdx) => {
+        grandSignups += group.totSignups;
+        grandFtd += group.totFtd;
+        grandRev += group.totRev;
+        grandChildCount += group.items.length;
+
+        const pubId = `pub-group-${gIdx}`;
+        const hiddenClass = allPubExpanded ? '' : 'hidden';
+        const iconClass = allPubExpanded ? 'fa-minus' : 'fa-plus';
+
+        const parentRow = `
+          <tr class="hover:bg-slate-100/70 transition-colors bg-white font-extrabold border-b border-slate-200">
+            <td class="p-2.5 pl-4">
+              <div class="flex items-center justify-between gap-1.5 font-black text-slate-900">
+                <span class="text-sm tracking-tight">${group.publisher}</span>
+                <button type="button" onclick="togglePubGroup('${pubId}', event)" class="w-4 h-4 shrink-0 rounded flex items-center justify-center bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 transition-colors text-[9px] font-black cursor-pointer shadow-2xs" title="Expandir/Contraer marcas">
+                  <i id="icon-${pubId}" class="fa-solid ${iconClass}"></i>
+                </button>
+              </div>
+            </td>
+            <td class="p-2.5 font-bold text-left text-slate-600">
+              <span class="px-2 py-0.5 rounded bg-slate-100 text-[11px] font-extrabold">${group.advertisersSet.size} Advertisers</span>
+            </td>
+            <td class="p-2.5 font-bold text-left text-slate-600">
+              <span class="px-2 py-0.5 rounded bg-slate-100 text-[11px] font-extrabold">${group.items.length} Brands</span>
+            </td>
+            <td class="p-2.5 text-center font-black text-amber-600 text-sm">${group.totSignups.toLocaleString()}</td>
+            <td class="p-2.5 text-center font-black text-blue-700 text-sm">${group.totFtd.toLocaleString()}</td>
+            <td class="p-2.5 text-center font-black text-purple-700">${group.s2pText}</td>
+            <td class="p-2.5 text-center font-black text-emerald-600 pr-4">$${Math.round(group.totRev).toLocaleString()}</td>
+          </tr>
+        `;
+
+        const childRows = group.items.map(item => `
+          <tr class="pub-child-${pubId} ${hiddenClass} bg-slate-50/80 hover:bg-slate-100/90 transition-colors border-b border-slate-100 text-xs">
+            <td class="p-2 pl-7 font-bold text-slate-400">
+              <span class="inline-flex items-center gap-1.5 text-[11px]">
+                <i class="fa-solid fa-turn-up fa-rotate-90 text-[10px] text-slate-400"></i>
+                <span class="text-slate-500 font-bold">${group.publisher}</span>
+              </span>
+            </td>
+            <td class="p-2 text-left font-semibold text-slate-700">${item.advertiser}</td>
+            <td class="p-2 text-left font-semibold text-slate-800">${item.brand}</td>
+            <td class="p-2 text-center font-extrabold text-amber-600">${item.signups.toLocaleString()}</td>
+            <td class="p-2 text-center font-extrabold text-blue-700">${item.ftd.toLocaleString()}</td>
+            <td class="p-2 text-center font-bold text-purple-700">${item.s2pText}</td>
+            <td class="p-2 text-center font-bold text-emerald-600 pr-4">$${Math.round(item.revenue).toLocaleString()}</td>
+          </tr>
+        `).join('');
+
+        return parentRow + childRows;
       }).join('');
 
       tbody.innerHTML = rowsHtml;
 
-      const totS2p = totSignups > 0 ? ((totFtd / totSignups) * 100).toFixed(1) + '%' : '0.0%';
+      const grandS2p = grandSignups > 0 ? ((grandFtd / grandSignups) * 100).toFixed(1) + '%' : '0.0%';
 
       if (tfoot) {
         tfoot.innerHTML = `
-        <tr class="bg-slate-100/90 font-black border-t-2 border-slate-300">
-          <td class="p-3 text-left text-slate-900 pl-4">Grand Total</td>
-          <td colspan="2" class="p-3 text-left text-slate-500 font-extrabold">${flatList.length} Active Relationships</td>
-          <td class="p-3 text-center font-black text-amber-700 text-sm">${totSignups.toLocaleString()}</td>
-          <td class="p-3 text-center font-black text-blue-800 text-sm">${totFtd.toLocaleString()}</td>
-          <td class="p-3 text-center font-black text-purple-700">${totS2p}</td>
-          <td class="p-3 text-center font-black text-emerald-700 text-sm pr-4">$${Math.round(totRev).toLocaleString()}</td>
-        </tr>`;
+          <tr class="bg-slate-100/90 font-black border-t-2 border-slate-300">
+            <td class="p-3 text-left text-slate-900 pl-4">Grand Total</td>
+            <td colspan="2" class="p-3 text-left text-slate-500 font-extrabold">${pubGroups.length} Publishers (${grandChildCount} Brands)</td>
+            <td class="p-3 text-center font-black text-amber-700 text-sm">${grandSignups.toLocaleString()}</td>
+            <td class="p-3 text-center font-black text-blue-800 text-sm">${grandFtd.toLocaleString()}</td>
+            <td class="p-3 text-center font-black text-purple-700">${grandS2p}</td>
+            <td class="p-3 text-center font-black text-emerald-700 text-sm pr-4">$${Math.round(grandRev).toLocaleString()}</td>
+          </tr>
+        `;
       }
+    }
+
+    // TOGGLE GRUPO INDIVIDUAL DE PUBLISHER
+    function togglePubGroup(pubId, e) {
+      e?.stopPropagation();
+      const childRows = document.querySelectorAll(`tr.pub-child-${pubId}`);
+      const icon = document.getElementById(`icon-${pubId}`);
+      if (childRows.length === 0) return;
+
+      const isHidden = childRows[0].classList.contains('hidden');
+      childRows.forEach(r => {
+        if (isHidden) r.classList.remove('hidden');
+        else r.classList.add('hidden');
+      });
+
+      if (icon) {
+        if (isHidden) {
+          icon.classList.remove('fa-plus');
+          icon.classList.add('fa-minus');
+        } else {
+          icon.classList.remove('fa-minus');
+          icon.classList.add('fa-plus');
+        }
+      }
+
+      updateAllPubBtnState();
+    }
+
+    // BOTÓN GENERAL SHOW ALL / COLLAPSE ALL DE PUBLISHERS
+    function toggleAllPubs() {
+      allPubExpanded = !allPubExpanded;
+      const allChildren = document.querySelectorAll('#publisherBreakdownBody tr[class*="pub-child-"]');
+      const allIcons = document.querySelectorAll('#publisherBreakdownBody [id^="icon-pub-group-"]');
+      const btnText = document.getElementById('toggleAllPubText');
+      const btnIcon = document.getElementById('toggleAllPubIcon');
+
+      allChildren.forEach(r => {
+        if (allPubExpanded) r.classList.remove('hidden');
+        else r.classList.add('hidden');
+      });
+
+      allIcons.forEach(ic => {
+        if (allPubExpanded) {
+          ic.classList.remove('fa-plus');
+          ic.classList.add('fa-minus');
+        } else {
+          ic.classList.remove('fa-minus');
+          ic.classList.add('fa-plus');
+        }
+      });
+
+      if (btnText) btnText.textContent = allPubExpanded ? 'Collapse All' : 'Show All';
+      if (btnIcon) btnIcon.className = allPubExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
+    }
+
+    function updateAllPubBtnState() {
+      const allChildren = document.querySelectorAll('#publisherBreakdownBody tr[class*="pub-child-"]');
+      if (allChildren.length === 0) return;
+      const visibleChildren = document.querySelectorAll('#publisherBreakdownBody tr[class*="pub-child-"]:not(.hidden)');
+      
+      allPubExpanded = (visibleChildren.length === allChildren.length);
+      const btnText = document.getElementById('toggleAllPubText');
+      const btnIcon = document.getElementById('toggleAllPubIcon');
+
+      if (btnText) btnText.textContent = allPubExpanded ? 'Collapse All' : 'Show All';
+      if (btnIcon) btnIcon.className = allPubExpanded ? 'fa-solid fa-chevron-up text-[10px]' : 'fa-solid fa-chevron-down text-[10px]';
     }
 
     // ORDENAMIENTO EN TABLA PUBLISHER
@@ -908,23 +1057,7 @@
         pubSortDir = (key === 'publisher') ? 'asc' : 'desc';
       }
 
-      const tbody = document.getElementById('publisherBreakdownBody');
-      if (!tbody) return;
-      const rows = Array.from(tbody.querySelectorAll('tr.publisher-row'));
-      if (rows.length === 0) return;
-
-      rows.sort((a, b) => {
-        if (key === 'publisher') {
-          return pubSortDir === 'asc' 
-            ? a.dataset.publisher.localeCompare(b.dataset.publisher)
-            : b.dataset.publisher.localeCompare(a.dataset.publisher);
-        }
-        const vA = parseFloat(a.dataset[key]) || 0;
-        const vB = parseFloat(b.dataset[key]) || 0;
-        return pubSortDir === 'desc' ? vB - vA : vA - vB;
-      });
-
-      rows.forEach(r => tbody.appendChild(r));
+      renderPublisherBreakdown(currentBrandsList, currentBrandRatios);
     }
 
     // ORDENAMIENTOS CPA, CPR, CPL
@@ -1031,223 +1164,6 @@
           btn.classList.remove('bg-blue-50', 'border-blue-300', 'text-blue-700');
         }
       });
-    }
-
-    // TABLAS DE DESGLOSE (LIMPIAS)
-    function renderBreakdownTables(partners, rrFactor = 1, totKpis = {}, teamKpis = {}) {
-      const container = document.getElementById('breakdown-tables-container');
-      const kBudget = teamKpis.budget || 5500;
-      
-      const cpa = partners.filter(isCpaPartner).sort((a,b) => {
-        const uA = typeof a.cpaMtd === 'number' ? a.cpaMtd : 0;
-        const uB = typeof b.cpaMtd === 'number' ? b.cpaMtd : 0;
-        if (uB !== uA) return uB - uA;
-        const sA = typeof a.sigMtd === 'number' ? a.sigMtd : 0;
-        const sB = typeof b.sigMtd === 'number' ? b.sigMtd : 0;
-        return sB - sA;
-      });
-
-      const cpr = partners.filter(isCprPartner).sort((a,b) => (b.cprMtd || 0) - (a.cprMtd || 0));
-      const cpl = partners.filter(isCplPartner).sort((a,b) => (b.cplMtd || 0) - (a.cplMtd || 0));
-
-      const totalRows = cpa.length + cpr.length + cpl.length;
-      const allBudgetKpis = totalRows > 0 ? distributeEqual(kBudget, totalRows) : [];
-
-      let kpiIdx = 0;
-      cpa.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
-      cpr.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
-      cpl.forEach(p => p._bKpi = allBudgetKpis[kpiIdx++] || 0);
-
-      [...cpa, ...cpr, ...cpl].forEach(p => {
-        const b = p.budget || 0;
-        p._budgetRr = (typeof p.budgetRr === 'number') ? p.budgetRr : Math.round(b * rrFactor);
-        
-        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
-        p._sigRr = (typeof p.sigRr === 'number') ? p.sigRr : Math.round(sigVal * rrFactor);
-
-        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
-        p._cpaRr = (typeof p.cpaRr === 'number') ? p.cpaRr : Math.round(usersVal * rrFactor);
-
-        const cprVal = typeof p.cprMtd === 'number' ? p.cprMtd : 0;
-        p._cprRr = (typeof p.cprRr === 'number') ? p.cprRr : Math.round(cprVal * rrFactor);
-
-        const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
-        p._cplRr = (typeof p.cplRr === 'number') ? p.cplRr : (typeof p.cplMtd === 'number' ? Math.round(p.cplMtd * rrFactor) : '—');
-      });
-
-      const cpaTotBKpi = cpa.reduce((a, p) => a + (p._bKpi || 0), 0);
-      const cprTotBKpi = cpr.reduce((a, p) => a + (p._bKpi || 0), 0);
-      const cplTotBKpi = cpl.reduce((a, p) => a + (p._bKpi || 0), 0);
-
-      const renderRows = (list, type) => list.map(p => {
-        const b = p.budget || 0, bRr = p._budgetRr, r = p.rev || 0;
-        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
-        const bKpi = p._bKpi || 0;
-        const bKpiDisplay = `$${bKpi.toLocaleString()}`;
-        const badge = getStatusBadge(p.status);
-        const revDisplay = `$${Math.round(r).toLocaleString()}`;
-        const sigVal = typeof p.sigMtd === 'number' ? p.sigMtd : 0;
-        const usersVal = typeof p.cpaMtd === 'number' ? p.cpaMtd : 0;
-
-        if (type === 'CPA') { 
-          const cpaVal = usersVal;
-          const cpaRrVal = p._cpaRr;
-          const s2p = sigVal > 0 ? ((cpaVal / sigVal) * 100).toFixed(1) + '%' : '0.0%';
-
-          return `
-          <tr class="hover:bg-slate-50 cpa-row" data-budget="${b}" data-registrations="${sigVal}" data-cpa="${cpaVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
-            <td class="p-2 font-bold">${p.name}</td>
-            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
-            <td class="text-center font-bold">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
-            <td class="text-center font-bold">${sigVal}</td>
-            <td class="text-center text-slate-500 font-bold">${p.cpaKpi || 25}</td>
-            <td class="text-center font-black">${cpaVal}</td>
-            <td class="text-center font-bold ${getRrColor(cpaRrVal, p.cpaKpi)}">${cpaRrVal}</td>
-            <td class="text-center font-bold text-purple-700">${s2p}</td>
-            <td class="text-center font-bold">${revDisplay}</td>
-            <td class="text-center font-bold">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`; 
-        }
-
-        if (type === 'CPR') {
-          const cprMtdVal = typeof p.cprMtd === 'number' ? Math.round(p.cprMtd) : 0;
-          const cprRrVal = p._cprRr;
-
-          return `
-          <tr class="hover:bg-slate-50 cpr-row" data-budget="${b}" data-cpr="${p.cprMtd||0}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
-            <td class="p-2 font-bold">${p.name}</td>
-            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
-            <td class="text-center font-bold">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
-            <td class="text-center text-slate-500 font-bold">${p.cprKpi||200}</td>
-            <td class="text-center font-black">${cprMtdVal}</td>
-            <td class="text-center font-bold ${getRrColor(cprRrVal, p.cprKpi)}">${cprRrVal}</td>
-            <td class="text-center font-bold">${sigVal}</td>
-            <td class="text-center font-bold">${usersVal}</td>
-            <td class="text-center font-bold">${revDisplay}</td>
-            <td class="text-center font-bold">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`;
-        }
-
-        if (type === 'CPL') {
-          const cplVal = typeof p.cplMtd === 'number' ? p.cplMtd : 0;
-          const cplRrVal = p._cplRr;
-
-          return `
-          <tr class="hover:bg-slate-50 cpl-row" data-budget="${b}" data-leads="${cplVal}" data-registrations="${sigVal}" data-users="${usersVal}" data-revenue="${r}" data-status="${statusWeight[p.status] || 0}">
-            <td class="p-2 font-bold">${p.name}</td>
-            <td class="text-center font-semibold text-slate-700">${bKpiDisplay}</td>
-            <td class="text-center font-bold">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, bKpi)} font-extrabold">$${bRr}</td>
-            <td class="text-center text-slate-500 font-bold">${p.cplKpi||'—'}</td>
-            <td class="text-center font-black">${cplVal}</td>
-            <td class="text-center font-black ${getRrColor(cplRrVal, p.cplKpi)}">${cplRrVal}</td>
-            <td class="text-center font-bold">${sigVal}</td>
-            <td class="text-center font-bold">${usersVal}</td>
-            <td class="text-center font-bold">${revDisplay}</td>
-            <td class="text-center font-bold">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap">${badge}</td>
-          </tr>`;
-        }
-      }).join('');
-
-      const renderFoot = (list, type, totBKpi) => {
-        const b = list.reduce((a,p) => a + (p.budget || 0), 0);
-        const bRr = list.reduce((a,p) => a + (p._budgetRr || 0), 0);
-        const r = list.reduce((a,p) => a + (p.rev || 0), 0);
-        const roi = (b > 0 && r > 0) ? `1:${(r/b).toFixed(1)}` : '—';
-        const bKpiTotDisplay = totBKpi > 0 ? `$${totBKpi.toLocaleString()}` : '$0';
-        const revTotDisplay = `$${Math.round(r).toLocaleString()}`;
-
-        const s = list.reduce((a,p) => a + (typeof p.sigMtd === 'number' ? p.sigMtd : 0), 0);
-        const u = list.reduce((a,p) => a + (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0), 0);
-
-        if (type === 'CPA') { 
-          const uRr = list.reduce((a,p) => a + (p._cpaRr || 0), 0);
-          const s2p = s > 0 ? ((u / s) * 100).toFixed(1) + '%' : '0.0%'; 
-          const aKpi = totKpis.cpa?.kpi || 300;
-          return `<tr>
-            <td class="p-2 font-black">Grand total</td>
-            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
-            <td class="text-center font-black">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
-            <td class="text-center font-black">${s}</td>
-            <td class="text-center text-slate-700 font-black">${aKpi.toLocaleString()}</td>
-            <td class="text-center font-black">${u}</td>
-            <td class="text-center font-bold ${getRrColor(uRr, aKpi)}">${uRr}</td>
-            <td class="text-center font-black text-purple-700">${s2p}</td>
-            <td class="text-center font-black">${revTotDisplay}</td>
-            <td class="text-center font-black">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
-          </tr>`; 
-        }
-
-        if (type === 'CPR') { 
-          const c = Math.round(list.reduce((a,p) => a + (p.cprMtd || 0), 0));
-          const cRr = list.reduce((a,p) => a + (p._cprRr || 0), 0); 
-          const cKpi = totKpis.cpr?.kpi || 200;
-          return `<tr>
-            <td class="p-2 font-black">Grand total</td>
-            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
-            <td class="text-center font-black">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
-            <td class="text-center text-slate-700 font-black">${cKpi.toLocaleString()}</td>
-            <td class="text-center font-black">${c}</td>
-            <td class="text-center font-bold ${getRrColor(cRr, cKpi)}">${cRr}</td>
-            <td class="text-center font-black">${s}</td>
-            <td class="text-center font-black">${u}</td>
-            <td class="text-center font-black">${revTotDisplay}</td>
-            <td class="text-center font-black">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
-          </tr>`; 
-        }
-
-        if (type === 'CPL') { 
-          const l = list.reduce((a,p) => a + (typeof p.cplMtd === 'number' ? p.cplMtd : 0), 0);
-          const lRr = list.reduce((a,p) => a + (typeof p._cplRr === 'number' ? p._cplRr : 0), 0); 
-          const lKpi = totKpis.cpl?.kpi || 4000;
-          return `<tr>
-            <td class="p-2 font-black">Grand total</td>
-            <td class="text-center font-black text-slate-700">${bKpiTotDisplay}</td>
-            <td class="text-center font-black">$${b}</td>
-            <td class="text-center ${getRrColor(bRr, totBKpi)} font-black">$${bRr}</td>
-            <td class="text-center text-slate-700 font-black">${lKpi.toLocaleString()}</td>
-            <td class="text-center font-black">${l}</td>
-            <td class="text-center font-black ${getRrColor(lRr, lKpi)}">${lRr}</td>
-            <td class="text-center font-black">${s}</td>
-            <td class="text-center font-black">${u}</td>
-            <td class="text-center font-black">${revTotDisplay}</td>
-            <td class="text-center font-black">${roi}</td>
-            <td class="p-2 text-center whitespace-nowrap"><span class="text-[10px] font-black uppercase text-slate-500">${list.length} Media</span></td>
-          </tr>`; 
-        }
-      };
-
-      container.innerHTML = `
-        <!-- 1. CPA -->
-        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
-          <span class="text-xs font-black uppercase text-purple-900 bg-purple-100 px-3 py-1 rounded-md">CPA</span>
-          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('budget')" id="sort-cpa-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('registrations')" id="sort-cpa-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('cpa')" id="sort-cpa-cpa" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCpaTable('revenue')" id="sort-cpa-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCpaTable('status')" id="sort-cpa-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th rowspan="2" class="p-1.5 bg-slate-100 align-middle">Registrations</th><th colspan="3" class="p-1.5 bg-purple-100">CPA</th><th colspan="3" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>S2P</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cpaTableBody" class="font-semibold">${renderRows(cpa, 'CPA') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpa, 'CPA', cpaTotBKpi)}</tfoot></table></div>
-        </div>
-
-        <!-- 2. CPR -->
-        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
-          <span class="text-xs font-black uppercase text-amber-900 bg-amber-100 px-3 py-1 rounded-md">CPR</span>
-          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCprTable('budget')" id="sort-cpr-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCprTable('cpr')" id="sort-cpr-cpr" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('registrations')" id="sort-cpr-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('users')" id="sort-cpr-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCprTable('revenue')" id="sort-cpr-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCprTable('status')" id="sort-cpr-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-amber-100">CPR</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cprTableBody" class="font-semibold">${renderRows(cpr, 'CPR') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No active CPR records</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${cpr.length ? renderFoot(cpr, 'CPR', cprTotBKpi) : ''}</tfoot></table></div>
-        </div>
-
-        <!-- 3. CPL -->
-        <div class="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
-          <span class="text-xs font-black uppercase text-sky-900 bg-sky-100 px-3 py-1 rounded-md">CPL</span>
-          <div class="overflow-x-auto"><table class="w-full text-xs table-grid"><thead><tr class="sort-row-borderless select-none"><th></th><th></th><th class="text-center"><button onclick="sortCplTable('budget')" id="sort-cpl-budget" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th></th><th class="text-center"><button onclick="sortCplTable('leads')" id="sort-cpl-leads" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('registrations')" id="sort-cpl-registrations" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('users')" id="sort-cpl-users" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th class="text-center"><button onclick="sortCplTable('revenue')" id="sort-cpl-revenue" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th><th></th><th class="text-center"><button onclick="sortCplTable('status')" id="sort-cpl-status" class="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-bold shadow-2xs hover:bg-slate-100 flex items-center gap-1 mx-auto transition-all">Sort <i class="fa-solid fa-sort text-slate-400"></i></button></th></tr><tr class="font-extrabold text-center select-none"><th rowspan="2" class="p-2 text-left bg-slate-50 align-middle">Media Partner</th><th colspan="3" class="p-1.5 bg-sky-100">Budget</th><th colspan="3" class="p-1.5 bg-fuchsia-100">Leads</th><th colspan="4" class="p-1.5 bg-emerald-100">Performance</th><th rowspan="2" class="p-2 text-center bg-emerald-100/60 text-slate-800 align-middle">Status</th></tr><tr class="bg-slate-50 font-bold text-center select-none text-slate-700"><th>KPI</th><th>MTD</th><th>RR</th><th>KPI</th><th>MTD</th><th>RR</th><th>Registrations</th><th>Users</th><th>Revenue</th><th>ROI</th></tr></thead><tbody id="cplTableBody" class="font-semibold">${renderRows(cpl, 'CPL') || '<tr><td colspan="12" class="p-3 text-center text-slate-400">No data</td></tr>'}</tbody><tfoot class="font-black bg-slate-50 border-t-2">${renderFoot(cpl, 'CPL', cplTotBKpi)}</tfoot></table></div>
-        </div>`;
-      
-      updateCpaSortIcons();
-      updateCprSortIcons();
-      updateCplSortIcons();
     }
 
     // ORDENAMIENTO EN TABLA DE MARCAS
