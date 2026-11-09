@@ -60,11 +60,6 @@
           </div>
         </div>
       </div>
-      <div class="flex gap-2">
-        <button onclick="switchTab('all')" id="tab-all" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 text-white">All Views</button>
-        <button onclick="switchTab('v1')" id="tab-v1" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">View 1 (Summary)</button>
-        <button onclick="switchTab('v2')" id="tab-v2" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">View 2 (Campaign Tables)</button>
-      </div>
     </div>
 
     <!-- SECCIÓN 1: SUMMARY -->
@@ -428,7 +423,8 @@
       const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
       
       const lastDayOfMonth = fmtYMD(new Date(sDate.getFullYear(), sDate.getMonth() + 1, 0));
-      const isFull = Boolean(data.date_range && sYMD === data.date_range.start && (eYMD === data.date_range.end || (eYMD >= data.date_range.end && eYMD <= lastDayOfMonth)));
+      // Es mes completo únicamente si inicia en el día 1 y coincide con el final de datos o el último día del mes
+      const isFull = Boolean(data.date_range && sYMD === data.date_range.start && (eYMD === data.date_range.end || eYMD === lastDayOfMonth));
       
       let slice = (data.daily_series || []).filter(r => r.date && r.date >= sYMD && r.date <= eYMD);
 
@@ -446,12 +442,12 @@
       const rrFactor = isFull ? 1 : (totalMonthDays / calendarDays);
       currentRrFactor = rrFactor;
 
-      const leads = isFull ? data.totals.cpl.mtd : slice.reduce((a,r) => a + r.leads, 0);
-      const sigs = isFull ? data.totals.signups.mtd : slice.reduce((a,r) => a + r.signups, 0);
+      const leads = isFull ? data.totals.cpl.mtd : slice.reduce((a,r) => a + (r.leads || 0), 0);
+      const sigs = isFull ? data.totals.signups.mtd : slice.reduce((a,r) => a + (r.signups || 0), 0);
       const cprVal = isFull ? (data.totals.cpr?.mtd || 0) : slice.reduce((a,r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
-      const users = isFull ? data.totals.cpa.mtd : slice.reduce((a,r) => a + r.users, 0);
-      const budget = isFull ? data.totals.budget : slice.reduce((a,r) => a + r.budget, 0);
-      const rev = isFull ? data.totals.revenue : Number(slice.reduce((a,r) => a + r.rev, 0).toFixed(2));
+      const users = isFull ? data.totals.cpa.mtd : slice.reduce((a,r) => a + (r.users || 0), 0);
+      const budget = isFull ? data.totals.budget : slice.reduce((a,r) => a + (r.budget || 0), 0);
+      const rev = isFull ? data.totals.revenue : Number(slice.reduce((a,r) => a + (r.rev || 0), 0).toFixed(2));
       const profit = Number((rev - budget).toFixed(2));
       
       const rr = {
@@ -469,10 +465,13 @@
 
       renderKPIs({ budget, sigs, users, rev, profit, rr, roi: isFull ? data.totals.roi : null, teamKpis });
 
-      const lRatio = leads / (data.totals.cpl?.mtd || 1), sRatio = sigs / (data.totals.signups?.mtd || 1);
+      const lRatio = isFull ? 1 : (leads / (data.totals.cpl?.mtd || 1));
+      const sRatio = isFull ? 1 : (sigs / (data.totals.signups?.mtd || 1));
       const totMonthlyCpr = data.totals.cpr?.mtd || 0;
-      const cRatio = totMonthlyCpr > 0 ? (cprVal / totMonthlyCpr) : 0;
-      const uRatio = users / (data.totals.cpa?.mtd || 1), bRatio = budget / (data.totals.budget || 1), rRatio = rev / (data.totals.revenue || 1);
+      const cRatio = isFull ? 1 : (totMonthlyCpr > 0 ? (cprVal / totMonthlyCpr) : 0);
+      const uRatio = isFull ? 1 : (users / (data.totals.cpa?.mtd || 1));
+      const bRatio = isFull ? 1 : (budget / (data.totals.budget || 1));
+      const rRatio = isFull ? 1 : (rev / (data.totals.revenue || 1));
 
       let partners = (data.partners || []).map(p => {
         const pL = isFull ? p.cplMtd : (typeof p.cplMtd === 'number' && p.cplMtd > 0 ? Math.round(p.cplMtd * lRatio) : '—');
@@ -515,24 +514,25 @@
     function renderMultiMonth(sDate, eDate) {
       document.getElementById('tp-header-period').textContent = 'TOTAL CONSOLIDATED';
 
-      const covered = [];
+      const coveredMonths = [];
       let curM = new Date(sDate.getFullYear(), sDate.getMonth(), 1);
       const endM = new Date(eDate.getFullYear(), eDate.getMonth(), 1);
       while (curM <= endM) {
         const y = curM.getFullYear();
-        const mName = MONTHS[curM.getMonth()].toLowerCase();
+        const mIdx = curM.getMonth();
+        const mName = MONTHS[mIdx].toLowerCase();
         const data = DATA_CACHE[getCacheKey(y, mName)];
-        if (data && !covered.includes(data)) {
-          covered.push(data);
+        if (data) {
+          coveredMonths.push({ data, year: y, month: mIdx, mName });
         }
         curM.setMonth(curM.getMonth() + 1);
       }
 
-      if (covered.length === 0) return renderZeroState(sDate, eDate);
+      if (coveredMonths.length === 0) return renderZeroState(sDate, eDate);
 
       const sYMD = fmtYMD(sDate), eYMD = fmtYMD(eDate);
       const multiSeriesMap = {};
-      covered.forEach(m => (m.daily_series || []).forEach(r => {
+      coveredMonths.forEach(({ data }) => (data.daily_series || []).forEach(r => {
         if (r.date && r.date >= sYMD && r.date <= eYMD) {
           multiSeriesMap[r.date] = r;
         }
@@ -552,21 +552,24 @@
       if (slice.length === 0) {
         let cur = new Date(sDate);
         while (cur <= eDate) {
-          const k = fmtYMD(cur), mName = MONTHS[cur.getMonth()].substring(0,3);
+          const k = fmtYMD(cur), mName = MONTHS[cur.getMonth()].substring(0, 3);
           slice.push({ date: k, leads: 0, signups: 0, cpr: 0, users: 0, rev: 0, budget: 0, label: `${mName} ${cur.getDate()}` });
           cur.setDate(cur.getDate() + 1);
         }
       }
 
-      const totalTargetDays = covered.reduce((a, m) => a + (m.date_range?.days || 30), 0) || 30;
+      const totalTargetDays = coveredMonths.reduce((a, m) => a + (m.data.date_range?.days || new Date(m.year, m.month + 1, 0).getDate()), 0) || 30;
       const calendarDays = Math.max(Math.round((new Date(eDate.getFullYear(), eDate.getMonth(), eDate.getDate()) - new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate())) / 86400000) + 1, 1);
       const rrFactor = totalTargetDays / calendarDays;
       currentRrFactor = rrFactor;
 
-      const leads = slice.reduce((a,r) => a + r.leads, 0), sigs = slice.reduce((a,r) => a + r.signups, 0);
-      const cprVal = slice.reduce((a,r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
-      const users = slice.reduce((a,r) => a + r.users, 0), budget = slice.reduce((a,r) => a + r.budget, 0);
-      const rev = Number(slice.reduce((a,r) => a + r.rev, 0).toFixed(2)), profit = Number((rev - budget).toFixed(2));
+      const leads = slice.reduce((a, r) => a + (r.leads || 0), 0);
+      const sigs = slice.reduce((a, r) => a + (r.signups || 0), 0);
+      const cprVal = slice.reduce((a, r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
+      const users = slice.reduce((a, r) => a + (r.users || 0), 0);
+      const budget = slice.reduce((a, r) => a + (r.budget || 0), 0);
+      const rev = Number(slice.reduce((a, r) => a + (r.rev || 0), 0).toFixed(2));
+      const profit = Number((rev - budget).toFixed(2));
       
       const rr = { 
         budget: Math.round(budget * rrFactor), 
@@ -579,52 +582,141 @@
       };
 
       const teamKpis = {
-        budget: covered.reduce((a,m) => a + (m.team_kpis?.budget || 5500), 0),
-        signups: covered.reduce((a,m) => a + (m.team_kpis?.signups || 1000), 0),
-        users: covered.reduce((a,m) => a + (m.team_kpis?.users || 300), 0),
-        revenue: covered.reduce((a,m) => a + (m.team_kpis?.revenue || 16500), 0),
-        profit: covered.reduce((a,m) => a + (m.team_kpis?.profit || 11000), 0)
+        budget: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.budget || 5500), 0),
+        signups: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.signups || 1000), 0),
+        users: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.users || 300), 0),
+        revenue: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.revenue || 16500), 0),
+        profit: coveredMonths.reduce((a, m) => a + (m.data.team_kpis?.profit || 11000), 0)
       };
 
       const totKpis = {
-        cpl: { kpi: covered.reduce((a,m) => a + (m.totals?.cpl?.kpi || 4000), 0) },
-        signups: { kpi: covered.reduce((a,m) => a + (m.totals?.signups?.kpi || 1000), 0) },
-        cpr: { kpi: covered.reduce((a,m) => a + (m.totals?.cpr?.kpi || 200), 0) },
-        cpa: { kpi: covered.reduce((a,m) => a + (m.totals?.cpa?.kpi || 300), 0) }
+        cpl: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpl?.kpi || 4000), 0) },
+        signups: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.signups?.kpi || 1000), 0) },
+        cpr: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpr?.kpi || 200), 0) },
+        cpa: { kpi: coveredMonths.reduce((a, m) => a + (m.data.totals?.cpa?.kpi || 300), 0) }
       };
 
       renderKPIs({ budget, sigs, users, rev, profit, rr, teamKpis });
 
-      const totMonthlyCpr = covered.reduce((a,m) => a + (m.totals?.cpr?.mtd || 0), 0);
-      const cRatio = totMonthlyCpr > 0 ? (cprVal / totMonthlyCpr) : 0;
-
+      // CONSOLIDACIÓN CON PRORRATEO PRECISO MES POR MES
       const pMap = {};
-      covered.forEach(m => (m.partners || []).forEach(p => {
-        if (!pMap[p.name]) pMap[p.name] = { name: p.name, model: p.model || p.type, cplMtd: 0, sigMtd: 0, cprMtd: 0, cpaMtd: 0, rev: 0, budget: 0 };
-        if (typeof p.cplMtd === 'number') pMap[p.name].cplMtd += p.cplMtd;
-        if (typeof p.sigMtd === 'number') pMap[p.name].sigMtd += p.sigMtd;
-        if (typeof p.cprMtd === 'number') pMap[p.name].cprMtd += p.cprMtd;
-        if (typeof p.cpaMtd === 'number') pMap[p.name].cpaMtd += p.cpaMtd;
-        pMap[p.name].rev += Number((p.rev || 0).toFixed(2));
-        pMap[p.name].budget += (p.budget || 0);
-      }));
+      const bMap = {};
+
+      coveredMonths.forEach(({ data, year, month }) => {
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+
+        const startInMonth = (sDate > firstDayOfMonth) ? sDate : firstDayOfMonth;
+        const endInMonth = (eDate < lastDayOfMonth) ? eDate : lastDayOfMonth;
+
+        const startYMD = fmtYMD(startInMonth);
+        const endYMD = fmtYMD(endInMonth);
+        const mStartYMD = fmtYMD(firstDayOfMonth);
+        const mLastYMD = fmtYMD(lastDayOfMonth);
+
+        const dataEnd = data.date_range?.end || mLastYMD;
+        const isFullMonth = (startYMD === mStartYMD && (endYMD >= dataEnd || endYMD >= mLastYMD));
+
+        let sRatio = 1, uRatio = 1, bRatio = 1, rRatio = 1, lRatio = 1, cRatio = 1;
+
+        if (!isFullMonth) {
+          const mSeries = (data.daily_series || []).filter(r => r.date && r.date >= startYMD && r.date <= endYMD);
+          const mLeads = mSeries.reduce((a, r) => a + (r.leads || 0), 0);
+          const mSigs = mSeries.reduce((a, r) => a + (r.signups || 0), 0);
+          const mUsers = mSeries.reduce((a, r) => a + (r.users || 0), 0);
+          const mBudget = mSeries.reduce((a, r) => a + (r.budget || 0), 0);
+          const mRev = mSeries.reduce((a, r) => a + (r.rev || 0), 0);
+          const mCpr = mSeries.reduce((a, r) => a + (r.cpr !== undefined ? r.cpr : 0), 0);
+
+          const totLeads = data.totals?.cpl?.mtd || 0;
+          const totSigs = data.totals?.signups?.mtd || 0;
+          const totUsers = data.totals?.cpa?.mtd || 0;
+          const totBudget = data.totals?.budget || 0;
+          const totRev = data.totals?.revenue || 0;
+          const totCpr = data.totals?.cpr?.mtd || 0;
+
+          lRatio = totLeads > 0 ? (mLeads / totLeads) : 0;
+          sRatio = totSigs > 0 ? (mSigs / totSigs) : 0;
+          uRatio = totUsers > 0 ? (mUsers / totUsers) : 0;
+          bRatio = totBudget > 0 ? (mBudget / totBudget) : 0;
+          rRatio = totRev > 0 ? (mRev / totRev) : 0;
+          cRatio = totCpr > 0 ? (mCpr / totCpr) : 0;
+        }
+
+        // 1. Agregar Partners escalados
+        (data.partners || []).forEach(p => {
+          if (!pMap[p.name]) {
+            pMap[p.name] = { 
+              name: p.name, 
+              model: p.model || p.type, 
+              cplMtd: 0, 
+              sigMtd: 0, 
+              cprMtd: 0, 
+              cpaMtd: 0, 
+              rev: 0, 
+              budget: 0 
+            };
+          }
+          const pL = isFullMonth ? (typeof p.cplMtd === 'number' ? p.cplMtd : 0) : (typeof p.cplMtd === 'number' && p.cplMtd > 0 ? Math.round(p.cplMtd * lRatio) : 0);
+          const pS = isFullMonth ? (typeof p.sigMtd === 'number' ? p.sigMtd : 0) : (typeof p.sigMtd === 'number' && p.sigMtd > 0 ? Math.round(p.sigMtd * sRatio) : 0);
+          const pU = isFullMonth ? (typeof p.cpaMtd === 'number' ? p.cpaMtd : 0) : (typeof p.cpaMtd === 'number' && p.cpaMtd > 0 ? Math.round(p.cpaMtd * uRatio) : 0);
+          const pB = isFullMonth ? (p.budget || 0) : Math.round((p.budget || 0) * bRatio);
+          const pR = isFullMonth ? (p.rev || 0) : Number(((p.rev || 0) * rRatio).toFixed(2));
+          const pC = isFullMonth ? (typeof p.cprMtd === 'number' ? p.cprMtd : 0) : (typeof p.cprMtd === 'number' && p.cprMtd > 0 ? Math.round(p.cprMtd * cRatio) : 0);
+
+          pMap[p.name].cplMtd += pL;
+          pMap[p.name].sigMtd += pS;
+          pMap[p.name].cpaMtd += pU;
+          pMap[p.name].budget += pB;
+          pMap[p.name].rev += pR;
+          pMap[p.name].cprMtd += pC;
+        });
+
+        // 2. Agregar Brands escaladas
+        (data.advertisers_brands || []).forEach(b => {
+          const key = `${b.advertiser || ''}___${b.brand || ''}`;
+          if (!bMap[key]) {
+            bMap[key] = {
+              advertiser: b.advertiser,
+              brand: b.brand,
+              signups: 0,
+              ftd: 0,
+              revenue: 0,
+              budget: 0,
+              media_partners: []
+            };
+          }
+          const bS = isFullMonth ? (b.signups || 0) : Math.round((b.signups || 0) * sRatio);
+          const bF = isFullMonth ? (b.ftd || 0) : Math.round((b.ftd || 0) * uRatio);
+          const bB = isFullMonth ? (b.budget || 0) : Number(((b.budget || 0) * bRatio).toFixed(2));
+          const bR = isFullMonth ? (b.revenue || 0) : Number(((b.revenue || 0) * rRatio).toFixed(2));
+
+          bMap[key].signups += bS;
+          bMap[key].ftd += bF;
+          bMap[key].budget += bB;
+          bMap[key].revenue += bR;
+          if (b.media_partners && b.media_partners !== '-') {
+            bMap[key].media_partners.push(b.media_partners);
+          }
+        });
+      });
 
       let partners = Object.values(pMap).map(p => {
+        p.rev = Number(p.rev.toFixed(2));
         const pP = Number((p.rev - p.budget).toFixed(2));
         let st = 'neutral'; 
         if (pP > 0 && p.rev > 0) st = 'working-well'; 
         else if (pP < 0 && p.budget > 0) st = 'not-working'; 
         else if (p.sigMtd >= 9 || p.cpaMtd >= 2) st = 'potential';
 
-        const pCpr = (typeof p.cprMtd === 'number' && p.cprMtd > 0 && cprVal > 0) ? Math.round(p.cprMtd * cRatio) : 0;
         return {
           ...p, profit: pP, status: st,
           budgetRr: p.budget > 0 ? Math.round(p.budget * rrFactor) : 0,
           cplRr: p.cplMtd > 0 ? Math.round(p.cplMtd * rrFactor) : '—',
           sigRr: p.sigMtd > 0 ? Math.round(p.sigMtd * rrFactor) : 0,
           cpaRr: p.cpaMtd > 0 ? Math.round(p.cpaMtd * rrFactor) : 0,
-          cprMtd: pCpr,
-          cprRr: pCpr > 0 ? Math.round(pCpr * rrFactor) : 0
+          cprMtd: p.cprMtd,
+          cprRr: p.cprMtd > 0 ? Math.round(p.cprMtd * rrFactor) : 0
         };
       });
 
@@ -634,37 +726,16 @@
       renderLineChart(slice, 'Multi', { cpl: totKpis.cpl.kpi, sigs: totKpis.signups.kpi, users: totKpis.cpa.kpi }, totalTargetDays);
       renderBreakdownTables(partners, rrFactor, totKpis, teamKpis);
 
-      const bMap = {};
-      covered.forEach(m => (m.advertisers_brands || []).forEach(b => {
-        const key = `${b.advertiser || ''}___${b.brand || ''}`;
-        if (!bMap[key]) {
-          bMap[key] = {
-            advertiser: b.advertiser,
-            brand: b.brand,
-            signups: 0,
-            ftd: 0,
-            revenue: 0,
-            budget: 0,
-            media_partners: []
-          };
-        }
-        bMap[key].signups += (b.signups || 0);
-        bMap[key].ftd += (b.ftd || 0);
-        bMap[key].revenue += Number((b.revenue || 0).toFixed(2));
-        bMap[key].budget += Number((b.budget || 0).toFixed(2));
-        if (b.media_partners && b.media_partners !== '-') {
-          bMap[key].media_partners.push(b.media_partners);
-        }
-      }));
-
       const multiBrands = Object.values(bMap).map(b => ({
         ...b,
+        revenue: Number(b.revenue.toFixed(2)),
+        budget: Number(b.budget.toFixed(2)),
         profit: Number((b.revenue - b.budget).toFixed(2)),
         media_partners: b.media_partners.length > 0 ? Array.from(new Set(b.media_partners.join(' | ').split(' | '))).join(' | ') : '-'
       }));
       renderBrandsSummary(multiBrands, { sRatio: 1, uRatio: 1, bRatio: 1, rRatio: 1 });
 
-      renderInactive(covered[covered.length - 1]?.inactive_partners || []);
+      renderInactive(coveredMonths[coveredMonths.length - 1]?.data?.inactive_partners || []);
     }
 
     // TOGGLE MEDIA PARTNERS
@@ -992,9 +1063,9 @@
         data: {
           labels,
           datasets: [
-            { label: 'LEADS', data: slice.map(r => r.leads), borderColor: '#00d285', backgroundColor: '#00d285', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
-            { label: 'SIGNUPS', data: slice.map(r => r.signups), borderColor: '#2563eb', backgroundColor: '#2563eb', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
-            { label: 'USERS', data: slice.map(r => r.users), borderColor: '#a855f7', backgroundColor: '#a855f7', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: 'LEADS', data: slice.map(r => r.leads || 0), borderColor: '#00d285', backgroundColor: '#00d285', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: 'SIGNUPS', data: slice.map(r => r.signups || 0), borderColor: '#2563eb', backgroundColor: '#2563eb', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
+            { label: 'USERS', data: slice.map(r => r.users || 0), borderColor: '#a855f7', backgroundColor: '#a855f7', fill: false, borderWidth: 2.5, pointRadius: 2.5, tension: 0.2 },
             { label: `KPI LEADS (${dailyLeadsKpi}/d)`, data: Array(slice.length).fill(dailyLeadsKpi), borderColor: '#00d285', borderDash: [6, 4], pointRadius: 0, fill: false },
             { label: `KPI SIGNUPS (${dailySigsKpi}/d)`, data: Array(slice.length).fill(dailySigsKpi), borderColor: '#2563eb', borderDash: [6, 4], pointRadius: 0, fill: false },
             { label: `KPI USERS (${dailyUsersKpi}/d)`, data: Array(slice.length).fill(dailyUsersKpi), borderColor: '#a855f7', borderDash: [6, 4], pointRadius: 0, fill: false }
@@ -1339,13 +1410,6 @@
       document.getElementById('tp-rr-roi').textContent = '—';
       document.getElementById('breakdown-tables-container').innerHTML = '';
       renderBrandsSummary([]);
-    }
-
-    function switchTab(tab) {
-      const v1 = document.getElementById('section-v1'), v2 = document.getElementById('section-v2');
-      ['all','v1','v2'].forEach(t => document.getElementById(`tab-${t}`).className = (t === tab) ? 'px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 text-white' : 'px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200');
-      v1.style.display = (tab === 'all' || tab === 'v1') ? 'block' : 'none';
-      v2.style.display = (tab === 'all' || tab === 'v2') ? 'block' : 'none';
     }
 
     document.addEventListener('click', e => {
